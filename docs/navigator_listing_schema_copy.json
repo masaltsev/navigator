@@ -1,0 +1,95 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "integer"
+            },
+            "post_title": {
+                "type": "string"
+            },
+            "post_content": {
+                "type": "string"
+            },
+            "hp_listing_type": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "hp_ogrn": {
+                "type": "integer"
+            },
+            "hp_inn": {
+                "type": "integer"
+            },
+            "hp_location": {
+                "type": "string"
+            },
+            "hp_longitude": {
+                "type": "number"
+            },
+            "hp_latitude": {
+                "type": "number"
+            },
+            "hp_region": {
+                "type": "integer"
+            },
+            "hp_phone": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "hp_listing_cover": {
+                "type": "string"
+            },
+            "hp_listing_ownership": {
+                "type": "string"
+            },
+            "hp_town": {
+                "type": "string"
+            },
+            "hp_email": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "hp_site": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "hp_ceo": {
+                "type": "string"
+            },
+            "hp_dobro_ru": {
+                "type": "integer"
+            },
+            "hp_listing_category": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "hp_listing_service": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "required": [
+            "post_title",
+            "hp_location",
+            "hp_longitude",
+            "hp_latitude",
+            "hp_listing_category",
+            "hp_listing_service"
+        ]
+    },
+    "$schema": "http://json-schema.org/schema#"
+}
