@@ -1,5 +1,3 @@
-# Содержимое файла deepseek_navigator.py (Python script, upload as .txt for analysis)
-
 
 # coding: utf-8
 import os
@@ -18,12 +16,9 @@ os.makedirs("logs/requests", exist_ok=True)
 os.makedirs("logs/processing", exist_ok=True)
 
 # Настройки API
-# DADATA_TOKEN = os.getenv("DADATA_TOKEN")
-# DADATA_SECRET = os.getenv("DADATA_SECRET")
-# DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")  # Новый ключ для DeepSeek
-DADATA_TOKEN = "21a05b314afd67d7721ec21219ced7af1405ae6b"
-DADATA_SECRET = "bd4eaa8a79f8a7dfd2b44fafd5c534072f5f5452"
-DEEPSEEK_API_KEY = "sk-69267b292ea846f5ba6bc65ba536a630"
+DADATA_TOKEN = os.getenv("DADATA_TOKEN")
+DADATA_SECRET = os.getenv("DADATA_SECRET")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")  # Новый ключ для DeepSeek
 MODEL_NAME = os.getenv("MODEL_NAME", "deepseek-chat")  # Дефолтная модель DeepSeek
 
 dadata = Dadata(DADATA_TOKEN, DADATA_SECRET)
