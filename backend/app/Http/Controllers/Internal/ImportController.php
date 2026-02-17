@@ -455,6 +455,12 @@ class ImportController extends Controller
 
     /**
      * Attach event categories to event by codes.
+     *
+     * TODO: Unify identifier usage (code vs slug)
+     * - Currently uses 'slug' for lookup, but 'code' field was added to event_categories table
+     * - AI pipeline should be instructed to use either 'code' or 'slug' consistently
+     * - Once decision is made, update this method to use the chosen identifier
+     * - Consider: 'code' is more semantic for API/external systems, 'slug' is more URL-friendly
      */
     private function attachEventCategories(Event $event, array $codes): void
     {

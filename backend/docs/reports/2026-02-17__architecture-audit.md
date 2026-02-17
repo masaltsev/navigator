@@ -470,3 +470,42 @@ Schema::create('parse_profiles', function (Blueprint $table) {
 **Оценка соответствия: 85-90%**
 
 Основная архитектура реализована правильно. Требуются доработки для полной интеграции с социальными сетями и Source Manager подсистемой.
+
+---
+
+## Выполненные действия
+
+**Дата исправлений**: 2026-02-17  
+**Коммит после исправлений**: `7fd5c5f`
+
+### ✅ Шаг 1: Поля соцсетей в organizations
+- Добавлены поля `vk_group_id` и `ok_group_id` в миграцию `create_organizations_table.php`
+- Добавлены casts в модель `Organization`
+
+### ✅ Шаг 2: Source Manager — таблицы sources и parse_profiles
+- Создана миграция `0001_01_01_000026_create_sources_table.php`
+- Создана миграция `0001_01_01_000027_create_parse_profiles_table.php`
+- Созданы модели `Source` и `ParseProfile` с правильными связями и casts
+
+### ✅ Шаг 3: Soft deletes и индексы для Events / EventInstances / Venues
+- Добавлен `softDeletes()` в миграцию `create_events_table.php` и модель `Event`
+- Добавлен отдельный индекс на `start_datetime` в `create_event_instances_table.php`
+- Добавлен индекс на `end_datetime` в `create_event_instances_table.php`
+- Добавлен `softDeletes()` и индекс на `region_iso` в миграцию `create_venues_table.php` и модель `Venue`
+
+### ✅ Шаг 4: EventCategories — поле code
+- Добавлено поле `code` в миграцию `create_event_categories_table.php`
+- Добавлен комментарий в модель `EventCategory` о необходимости унификации идентификаторов
+- Добавлен TODO в `ImportController` о выборе между `code` и `slug`
+
+### ✅ Шаг 5: Дополнительные индексы для производительности
+- Добавлен составной индекс `['status', 'attendance_mode']` в `create_events_table.php`
+- Добавлен индекс на `end_datetime` в `create_event_instances_table.php`
+- Проверено: индекс на `published_at` в `articles` уже существует
+
+### ✅ Шаг 6: Финальный проход
+- Проверены все миграции и модели на соответствие архитектуре
+- Подтверждено наличие `softDeletes()` во всех моделях, использующих `SoftDeletes`
+- Проверены связи и casts во всех изменённых моделях
+
+**Итог**: Все критические несоответствия из отчёта устранены. Код готов к первому запуску миграций.

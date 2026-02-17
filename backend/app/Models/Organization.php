@@ -107,6 +107,8 @@ class Organization extends Model
             'ai_confidence_score' => 'decimal:4',
             'ai_source_trace' => 'array',
             'target_audience' => 'array',
+            'vk_group_id' => 'integer',
+            'ok_group_id' => 'integer',
         ];
     }
 }

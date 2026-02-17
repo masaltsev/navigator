@@ -44,6 +44,9 @@ return new class extends Migration
 
             $table->jsonb('target_audience')->nullable();
 
+            $table->bigInteger('vk_group_id')->nullable()->index();
+            $table->bigInteger('ok_group_id')->nullable()->index();
+
             $table->string('status')->index();
 
             $table->timestamps();

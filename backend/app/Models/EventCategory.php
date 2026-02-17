@@ -14,6 +14,9 @@ class EventCategory extends Model
 
     protected $guarded = [];
 
+    // Note: Both 'slug' and 'code' fields exist. 'slug' is URL-friendly, 'code' is semantic identifier.
+    // TODO: Decide which identifier to use consistently in AI pipeline and update ImportController accordingly.
+
     /**
      * Pivot table is `event_event_categories` to avoid collision with dictionary table name.
      *

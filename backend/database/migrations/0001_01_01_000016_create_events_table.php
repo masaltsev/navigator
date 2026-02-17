@@ -33,6 +33,9 @@ return new class extends Migration
 
             $table->string('status')->index();
 
+            // Composite index for common public API filter: status='approved' AND attendance_mode IN (...)
+            $table->index(['status', 'attendance_mode']);
+
             $table->foreign('organizer_id')
                 ->references('id')
                 ->on('organizers')
@@ -44,6 +47,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

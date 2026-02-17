@@ -18,11 +18,12 @@ return new class extends Migration
             $table->string('address_raw');
             $table->string('fias_id')->nullable()->index();
             $table->string('kladr_id')->nullable()->index();
-            $table->string('region_iso')->nullable();
+            $table->string('region_iso')->nullable()->index();
 
             // PostGIS geometry(Point, 4326) will be added via raw SQL below.
 
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // Option A (chosen): PostGIS geometry(Point, 4326) via raw SQL.

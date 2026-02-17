@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->string('name')->index();
             $table->string('slug')->unique();
+            $table->string('code')->nullable()->unique()->after('slug');
             $table->string('icon_url');
 
             $table->timestamps();

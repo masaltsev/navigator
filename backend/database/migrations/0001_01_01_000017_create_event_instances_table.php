@@ -21,6 +21,9 @@ return new class extends Migration
 
             $table->enum('status', ['scheduled', 'cancelled', 'rescheduled', 'finished']);
 
+            $table->index('start_datetime');
+            // Index for queries filtering by end_datetime (e.g., "events that haven't finished yet")
+            $table->index('end_datetime');
             $table->index(['start_datetime', 'status']);
 
             $table->foreign('event_id')
