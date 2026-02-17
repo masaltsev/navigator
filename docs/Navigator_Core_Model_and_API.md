@@ -20,6 +20,8 @@
 
 Чтобы органично инкапсулировать обе парадигмы без искусственного раздувания базы данных фиктивными юридическими лицами, доменная модель Navigator Core внедряет паттерн полиморфных связей. Этот подход позволяет родительской сущности (например, Мероприятию) ссылаться на абстрактного «Организатора», который на физическом уровне базы данных может разрешаться либо в профиль зарегистрированного фонда, либо в карточку инициативной группы, обеспечивая тем самым высочайшую архитектурную гибкость.
 
+**Примечание о стандартных полях Laravel:** Все основные сущности (organizations, events, venues, articles, sources, event_categories) используют стандартные поля Laravel `timestamps` (created_at, updated_at) для отслеживания времени создания и обновления записей. Большинство сущностей также используют `softDeletes` (deleted_at) для логического удаления, что позволяет восстанавливать записи и сохранять историю данных. Исключения (например, справочники без softDeletes или служебные таблицы) явно указаны в описании соответствующих сущностей.
+
 ### **Базовые справочники (Dictionaries)**
 
 Справочники образуют неизменяемый или редко изменяемый фундамент системы, обеспечивающий строгую консистентность данных. Искусственному интеллекту в рамках AI-пайплайна категорически запрещено генерировать или галлюцинировать новые категории; алгоритм обязан осуществлять маппинг (сопоставление) извлеченных семантических смыслов исключительно на утвержденные идентификаторы справочников. Это гарантирует, что пользовательские фильтры на фронтенде будут работать предсказуемо.
@@ -31,7 +33,7 @@
 | OrganizationType | Типология учреждений. Позволяет отличать Центры активного долголетия (44) от Специализированных медицинских центров (34) или Центров серебряного волонтерства (174). | id (PK, int), name (string), code (string), is\_active (boolean). |
 | OwnershipType | Форма собственности, определяющая юридический статус. Включает государственные (152), муниципальные (153), частные (163) структуры и НКО (162). | id (PK, int), name (string), code (string), is\_active (boolean). |
 | CoverageLevel | Территориальный охват деятельности (локальный, муниципальный, региональный, федеральный). Используется для гео-приоритизации поисковой выдачи. | id (PK, int), name (string), weight\_index (int). |
-| EventCategory | Типология активностей (лекции, тренировки ЗОЖ, собрания, мастер-классы). Критично для фильтрации в ленте событий. | id (PK, int), name (string), slug (string), icon\_url (string). |
+| EventCategory | Типология активностей (лекции, тренировки ЗОЖ, собрания, мастер-классы). Критично для фильтрации в ленте событий. | id (PK, int), name (string), slug (string, unique), code (string, nullable, unique), icon\_url (string), timestamps, softDeletes. Примечание: slug используется для URL, code — для семантической идентификации в AI-пайплайне. |
 
 ### **Полиморфная архитектура: Организаторы и Инициативы**
 
@@ -40,7 +42,7 @@
 | Таблица (Сущность) | Структура полей | Назначение и контекст |
 | :---- | :---- | :---- |
 | organizers | id (UUID, PK), organizable\_type (string, index), organizable\_id (UUID, index), contact\_phones (JSONB), contact\_emails (JSONB), status (string, index). | Универсальная точка входа. Поле organizable\_type хранит строковой алиас (Morph Map) целевой модели. Использование типа JSONB для контактов позволяет хранить массивы номеров, очищенных алгоритмами Dadata, без избыточных JOIN-запросов. |
-| organizations | id (UUID, PK), title (string), description (text), inn (string, unique), ogrn (string, unique), site\_urls (JSONB), organization\_type\_id (FK), ownership\_type\_id (FK), coverage\_level\_id (FK). | Хранилище профилей формальных юридических лиц. Поля inn и ogrn проходят предварительную очистку от нецифровых символов на этапе парсинга перед отправкой в API Dadata. |
+| organizations | id (UUID, PK), title (string), description (text), inn (string, unique, index), ogrn (string, unique, index), site\_urls (JSONB), organization\_type\_id (FK), ownership\_type\_id (FK), coverage\_level\_id (FK), works\_with\_elderly (boolean, index), ai\_confidence\_score (decimal, 8,4), ai\_explanation (text), ai\_source\_trace (JSONB), target\_audience (JSONB), vk\_group\_id (bigInteger, nullable, index), ok\_group\_id (bigInteger, nullable, index), status (string, index), timestamps, softDeletes. | Хранилище профилей формальных юридических лиц. Поля inn и ogrn проходят предварительную очистку от нецифровых символов на этапе парсинга перед отправкой в API Dadata. Поля vk\_group\_id и ok\_group\_id используются для интеграции с мини-приложениями ВКонтакте и Одноклассников. |
 | initiative\_groups | id (UUID, PK), name (string), description (text), community\_focus (string), established\_date (date, nullable). | Хранилище профилей неформальных коллективов (например, «группа бабушек в местном парке»), не имеющих юридических реквизитов. |
 
 Важнейшим аспектом сущности organizations является интеграция специфических полей для взаимодействия с AI-пайплайном. Процесс модерации и обогащения данных требует сохранения не только финального вердикта искусственного интеллекта, но и метрик его уверенности, а также цепочки рассуждений.
@@ -58,7 +60,7 @@
 
 #### **Дополнительные атрибуты: Целевая аудитория (Target Audience)**
 
-Несмотря на наличие флага работы с пожилыми людьми (works\_with\_elderly), для расширенной фильтрации и аналитики в сущности organizations и events добавляется поле target\_audience.1 Оно реализуется как массив ссылок на новый справочник (или тип ENUM). Возможные значения охватывают: пожилые люди, родственники, профильные специалисты, молодежь/дети (для межпоколенческих инициатив). Это позволяет точнее маршрутизировать контент и услуги.1
+Несмотря на наличие флага работы с пожилыми людьми (works\_with\_elderly), для расширенной фильтрации и аналитики в сущности organizations и events добавляется поле target\_audience (JSONB, nullable). Оно реализуется как массив объектов или ссылок на справочник target\_audience. Возможные значения охватывают: пожилые люди, родственники, профильные специалисты, молодежь/дети (для межпоколенческих инициатив). Это позволяет точнее маршрутизировать контент и услуги. Использование JSONB обеспечивает гибкость структуры данных и возможность расширения без изменения схемы БД.
 
 ### **Управление локациями: Сущность Venue и Геометрия PostGIS**
 
@@ -66,14 +68,14 @@
 
 | Сущность | Поля и типы данных | Архитектурное обоснование |
 | :---- | :---- | :---- |
-| venues | id (UUID, PK), address\_raw (string), fias\_id (string, index), kladr\_id (string, index), region\_iso (string), coordinates (Geometry Point, SRID 4326). | Поля fias\_id и kladr\_id обеспечивают синхронизацию с Федеральной информационной адресной системой через Dadata, что гарантирует абсолютную точность идентификации объектов. Поле coordinates использует специализированный тип данных PostGIS для хранения точки в проекции EPSG:4326. |
+| venues | id (UUID, PK), address\_raw (string), fias\_id (string, index), kladr\_id (string, index), region\_iso (string, index), coordinates (Geometry Point, SRID 4326), timestamps, softDeletes. | Поля fias\_id и kladr\_id обеспечивают синхронизацию с Федеральной информационной адресной системой через Dadata, что гарантирует абсолютную точность идентификации объектов. Поле coordinates использует специализированный тип данных PostGIS для хранения точки в проекции EPSG:4326. Индекс на region\_iso используется для региональной фильтрации. |
 
 ### **Мероприятия (Events) и сложная хронология (RRule)**
 
 | Таблица | Структура полей | Стратегия применения |
 | :---- | :---- | :---- |
-| events | id (UUID, PK), organizer\_id (UUID, FK), title (string), description (text), attendance\_mode (enum: offline, online, mixed), online\_url (string, nullable), rrule\_string (string, nullable), ai\_confidence\_score (decimal). | Хранит канонические данные события. Поле rrule\_string содержит строковое представление (например, FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH). |
-| event\_instances | id (UUID, PK), event\_id (UUID, FK), start\_datetime (timestamp, index), end\_datetime (timestamp, index), status (enum: scheduled, cancelled, rescheduled). | Служебная таблица (serving data). Фоновые процессы парсят RRule из родительской таблицы и генерируют записи на заданный горизонт планирования. |
+| events | id (UUID, PK), organizer\_id (UUID, FK, index), organization\_id (UUID, FK, nullable, index), title (string), description (text), attendance\_mode (enum: offline, online, mixed), online\_url (string, nullable), rrule\_string (string, nullable), target\_audience (JSONB, nullable), ai\_confidence\_score (decimal, 8,4, nullable), ai\_explanation (text, nullable), ai\_source\_trace (JSONB, nullable), status (string, index), индекс: ['status', 'attendance_mode'], timestamps, softDeletes. | Хранит канонические данные события. Поле rrule\_string содержит строковое представление (например, FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH). Составной индекс на ['status', 'attendance_mode'] оптимизирует частые запросы публичного API. |
+| event\_instances | id (UUID, PK), event\_id (UUID, FK, index), start\_datetime (timestampTz, index), end\_datetime (timestampTz, index), status (enum: scheduled, cancelled, rescheduled, finished), индекс: ['start_datetime', 'status'], timestamps. | Служебная таблица (serving data). Фоновые процессы парсят RRule из родительской таблицы и генерируют записи на заданный горизонт планирования. Отдельные индексы на start\_datetime и end\_datetime оптимизируют фильтрацию по времени, составной индекс ['start_datetime', 'status'] — запросы с обоими условиями. |
 
 #### **Прямая связь мероприятий и организаций (Денормализация)**
 
@@ -83,13 +85,77 @@
 
 * organization\_problem\_categories: (organization\_id, problem\_category\_id). Отражает исторический массив hp\_listing\_category.  
 * organization\_services: (organization\_id, service\_id). Отражает массив hp\_listing\_service.  
-* event\_categories: (event\_id, event\_category\_id).  
+* **event\_event\_categories**: (event\_id, event\_category\_id). Pivot таблица для связи событий с категориями. Название изменено на event\_event\_categories для избежания конфликта с справочником event\_categories.  
 * event\_venues: (event\_id, venue\_id). Событие может транслироваться из нескольких точек (смешанный формат).  
 * organization\_venues: (organization\_id, venue\_id, is\_headquarters boolean). Фиксирует филиальную сеть.
 
 ### **Контентная модель (Статьи и Руководства)**
 
-Модель данных расширяется для поддержки редакционного контента платформы. Вводится сущность articles (или проектируется слой маппинга для существующих постов WordPress). Базовые поля: id, title, content\_url, related\_problem\_category\_id (FK), related\_service\_id (FK), organization\_id (nullable, FK). Данная структура жизненно необходима для реализации концепции «Answer Instead of Search»: она позволяет искусственному интеллекту или рекомендательной системе платформы автоматически связывать образовательные руководства (например, о деменции) с карточками соответствующих центров и услуг.1
+Модель данных расширяется для поддержки редакционного контента платформы. Вводится сущность articles (или проектируется слой маппинга для существующих постов WordPress). Данная структура жизненно необходима для реализации концепции «Answer Instead of Search»: она позволяет искусственному интеллекту или рекомендательной системе платформы автоматически связывать образовательные руководства (например, о деменции) с карточками соответствующих центров и услуг.
+
+| Поле | Тип данных | Описание |
+| :---- | :---- | :---- |
+| id | UUID, PK | Уникальный идентификатор статьи |
+| title | string | Заголовок статьи |
+| slug | string, unique | URL-дружественный идентификатор для формирования ссылок (например, `/articles/kak-pomoch-pozhilomu-rodstvenniku`) |
+| content\_url | text, nullable | Ссылка на внешний контент (WordPress, внешний CMS). Используется для гибридной стратегии: постепенная миграция с внешних систем или сохранение ссылок на внешние статьи |
+| content | longText, nullable | Локально хранимый HTML-контент из WYSIWYG-редакторов. Позволяет хранить статьи непосредственно в базе данных без зависимости от внешних систем |
+| excerpt | text, nullable | Краткое описание статьи для SEO и превью в списках |
+| featured\_image\_url | string, nullable | URL главного изображения статьи для отображения в карточках и социальных сетях |
+| related\_problem\_category\_id | FK (problem\_categories), nullable | Связь с категорией проблематики, к которой относится статья |
+| related\_service\_id | FK (services), nullable | Связь с конкретной услугой, которую описывает статья |
+| organization\_id | UUID, FK (organizations), nullable | Связь с организацией-автором или организацией, о которой написана статья |
+| status | enum (draft, published, archived), default: draft, index | Статус публикации: черновик, опубликовано, архивировано |
+| published\_at | timestamp, nullable, index | Дата и время публикации статьи. Используется для сортировки и фильтрации опубликованного контента |
+| timestamps | created\_at, updated\_at | Стандартные поля Laravel для отслеживания времени создания и обновления |
+| softDeletes | deleted\_at | Мягкое удаление для возможности восстановления статей |
+
+**Стратегия хранения контента:** Модель поддерживает гибридный подход к хранению контента. Поле `content_url` используется для ссылок на внешние системы (WordPress, внешние CMS), а поле `content` — для локально хранимого HTML. Это позволяет постепенно мигрировать контент с внешних систем или сохранять ссылки на внешние статьи при наличии локально хранимых статей.
+
+**Совместимость с WYSIWYG/CMS:** Схема совместима с популярными Laravel-пакетами для работы с контентом:
+- Filament (filamentphp/filament) — компонент RichEditor
+- Nova (laravel/nova) — поле RichText
+- Spatie Media Library — для управления медиафайлами (или использование `featured_image_url` для простых случаев)
+- Для блочных редакторов (например, Tiptap с блоками) можно добавить JSONB-колонку `blocks` для структурированного контента
+
+### **Индексы производительности**
+
+Для обеспечения высокой производительности запросов в системе реализованы следующие ключевые индексы:
+
+**organizations:**
+* `inn`, `ogrn` — уникальные индексы для быстрого поиска по реквизитам
+* `status` — индекс для фильтрации по статусу модерации
+* `works_with_elderly` — индекс для фильтрации организаций, работающих с пожилыми
+* `vk_group_id`, `ok_group_id` — индексы для интеграции с социальными сетями
+
+**events:**
+* `status` — индекс для фильтрации по статусу
+* `['status', 'attendance_mode']` — составной индекс для оптимизации частых запросов публичного API (статус='approved' AND attendance_mode IN (...))
+* `organizer_id`, `organization_id` — индексы для связи с организаторами и организациями
+
+**event_instances:**
+* `start_datetime` — отдельный индекс для фильтрации по времени начала события
+* `end_datetime` — индекс для запросов типа "события, которые еще не закончились"
+* `['start_datetime', 'status']` — составной индекс для запросов с обоими условиями
+* `event_id` — индекс для связи с родительским событием
+
+**venues:**
+* `fias_id`, `kladr_id` — индексы для быстрого поиска по идентификаторам Dadata
+* `region_iso` — индекс для региональной фильтрации
+* GiST индекс на `coordinates` — пространственный индекс PostGIS для геопространственных запросов (ST_DWithin, ST_Distance)
+
+**articles:**
+* `published_at` — индекс для сортировки и фильтрации опубликованного контента
+* `status` — индекс для фильтрации по статусу публикации
+* `slug` — уникальный индекс для формирования URL
+
+**sources:**
+* `kind` — индекс для фильтрации по типу источника
+* `last_status` — индекс для мониторинга статуса обхода
+* `is_active` — индекс для выборки активных источников
+
+**parse_profiles:**
+* `['source_id', 'entity_type']` — составной индекс для связи профилей с источниками и фильтрации по типу сущности
 
 ## ---
 
@@ -131,24 +197,37 @@ CREATE TABLE sources (
     region\_iso VARCHAR(10),  
     fias\_region\_id UUID,  
     base\_url TEXT NOT NULL UNIQUE,  
-    entry\_points JSONB NOT NULL DEFAULT '',   
+    entry\_points JSONB NOT NULL DEFAULT '[]',   
     parse\_profile\_id UUID,  
     crawl\_period\_days INT DEFAULT 7,  
     last\_crawled\_at TIMESTAMP WITH TIME ZONE,  
     last\_status VARCHAR(50) DEFAULT 'pending',  
     priority INT DEFAULT 50,  
-    is\_active BOOLEAN DEFAULT TRUE  
+    is\_active BOOLEAN DEFAULT TRUE,  
+    created\_at TIMESTAMP WITH TIME ZONE,  
+    updated\_at TIMESTAMP WITH TIME ZONE,  
+    deleted\_at TIMESTAMP WITH TIME ZONE  
 );
+
+\-- Индексы для таблицы sources  
+CREATE INDEX sources\_kind\_idx ON sources(kind);  
+CREATE INDEX sources\_last\_status\_idx ON sources(last\_status);  
+CREATE INDEX sources\_is\_active\_idx ON sources(is\_active);
 
 \-- Таблица стратегий обхода (parse\_profiles)  
 CREATE TABLE parse\_profiles (  
     id UUID PRIMARY KEY DEFAULT gen\_random\_uuid(),  
     source\_id UUID REFERENCES sources(id) ON DELETE CASCADE,  
-    entity\_type VARCHAR(50) NOT NULL,  
+    entity\_type VARCHAR(50) NOT NULL, \-- Organization, Event  
     crawl\_strategy VARCHAR(50) NOT NULL, \-- list, sitemap, api\_json, rss, vk\_wall  
     config JSONB NOT NULL,  
-    is\_active BOOLEAN DEFAULT TRUE  
+    is\_active BOOLEAN DEFAULT TRUE,  
+    created\_at TIMESTAMP WITH TIME ZONE,  
+    updated\_at TIMESTAMP WITH TIME ZONE  
 );
+
+\-- Индекс для таблицы parse\_profiles  
+CREATE INDEX parse\_profiles\_source\_entity\_idx ON parse\_profiles(source\_id, entity\_type);
 
 **Связь с ai\_source\_trace (DDL миграция в Core):**
 
@@ -348,37 +427,80 @@ JSON
   JSON  
   {  
     "source\_reference": "dobro\_ru\_id\_778899",  
-    "entity\_type": "Organization",  
+    "entity\_type": "Organization", \-- Organization, InitiativeGroup, Individual  
     "title": "Центр серебряного добровольчества",  
-    "inn": "7712345678",  
-    "post\_content": "Центр координирует волонтерскую деятельность...",  
+    "description": "Центр координирует волонтерскую деятельность...", \-- nullable  
+    "inn": "7712345678", \-- nullable, max 12 символов  
+    "ogrn": "1234567890123", \-- nullable, max 15 символов  
     "ai\_metadata": {  
-      "decision": "accepted",  
-      "reason": "Подтверждена деятельность в 2024 году на официальном сайте. Регулярные мероприятия для пожилых (60% объема).",  
-      "confidence\_score": 0.94,  
-      "works\_with\_elderly": true,  
-      "source\_urls": \["https://dobro.ru/organizations/...", "https://example.com/news"\]  
+      "decision": "accepted", \-- accepted или rejected  
+      "ai\_confidence\_score": 0.94, \-- обязательное, от 0.0 до 1.0  
+      "works\_with\_elderly": true, \-- обязательное boolean  
+      "ai\_explanation": "Подтверждена деятельность в 2024 году на официальном сайте. Регулярные мероприятия для пожилых (60% объема).", \-- nullable  
+      "ai\_source\_trace": \[...\] \-- nullable, массив объектов с информацией об источниках  
     },  
     "classification": {  
-      "problem\_category\_codes": \["7", "12"\],  
-      "service\_codes": \["81", "83"\],  
-      "organization\_type\_code": "174",  
-      "ownership\_type\_code": "162",  
-      "coverage\_level\_id": 2  
+      "problem\_category\_codes": \["7", "12"\], \-- nullable, массив строк  
+      "service\_codes": \["81", "83"\], \-- nullable, массив строк  
+      "organization\_type\_code": "174", \-- nullable, только для Organization  
+      "ownership\_type\_code": "162", \-- nullable, только для Organization  
+      "coverage\_level\_id": 2 \-- nullable, integer, только для Organization  
     },  
-    "venues": \[  
+    "venues": \[ \-- nullable, массив объектов  
       {  
-        "address\_raw": "г. Москва, ул. Тверская 1",  
-        "fias\_id": "0c5b2444-70a0-4932-980c-b4dc0d3f02b5",  
-        "geo\_lat": 55.757,  
-        "geo\_lon": 37.615  
+        "address\_raw": "г. Москва, ул. Тверская 1", \-- обязательное  
+        "fias\_id": "0c5b2444-70a0-4932-980c-b4dc0d3f02b5", \-- nullable  
+        "geo\_lat": 55.757, \-- обязательное, numeric  
+        "geo\_lon": 37.615, \-- обязательное, numeric  
+        "is\_headquarters": true \-- nullable, boolean  
       }  
     \]  
   }
 
 * **Структура ответа**: Бэкенд обрабатывает запрос, вычисляет статус на основе confidence\_score и отвечает: {"status": "success", "organizer\_id": "uuid", "assigned\_state": "approved"}.
 
-**2\. Пакетный импорт (Batch Processing)**
+**2\. Импорт или обновление события (AI-Ingestion)**
+
+* **Эндпоинт**: POST /api/internal/import/event  
+* **Описание**: Принимает JSON-структуру события с RRule и привязкой к организатору/организации. Используется для импорта как разовых, так и повторяющихся событий.  
+* **Структура запроса (Body)**:  
+  JSON  
+  {  
+    "source\_reference": "sfr\_kld\_12193\_event\_1",  
+    "organizer\_id": "uuid", \-- обязательное, UUID существующего организатора  
+    "organization\_id": "uuid", \-- nullable, UUID организации (для денормализации)  
+    "title": "Занятие по компьютерной грамотности",  
+    "description": "Регулярные занятия для пожилых...", \-- nullable  
+    "attendance\_mode": "offline", \-- offline, online, mixed  
+    "online\_url": "https://zoom.us/...", \-- nullable, для online/mixed событий  
+    "rrule\_string": "FREQ=WEEKLY;INTERVAL=1;BYDAY=TU,TH", \-- nullable, строка RRule для повторяющихся событий  
+    "ai\_metadata": {  
+      "decision": "accepted",  
+      "ai\_confidence\_score": 0.92,  
+      "works\_with\_elderly": true, \-- nullable для событий  
+      "ai\_explanation": "...", \-- nullable  
+      "ai\_source\_trace": \[...\] \-- nullable  
+    },  
+    "classification": {  
+      "event\_category\_codes": \["lecture", "workshop"\], \-- nullable, массив slug или code категорий событий  
+      "target\_audience": \["elderly", "relatives"\] \-- nullable, массив значений целевой аудитории  
+    },  
+    "venues": \[ \-- nullable, массив UUID площадок или объектов для создания  
+      {  
+        "venue\_id": "uuid" \-- если площадка уже существует  
+      },  
+      {  
+        "address\_raw": "г. Москва, ул. Тверская 1", \-- для создания новой площадки  
+        "fias\_id": "...",  
+        "geo\_lat": 55.757,  
+        "geo\_lon": 37.615  
+      }  
+    \]  
+  }  
+* **Структура ответа**: {"status": "success", "event\_id": "uuid", "assigned\_state": "approved", "instances\_created": 12}  
+* **Примечание**: При наличии rrule\_string система автоматически создает материализованные экземпляры событий (event\_instances) на ближайшие 90 дней через фоновые задачи.
+
+**3\. Пакетный импорт (Batch Processing)**
 
 * **Эндпоинт**: POST /api/internal/import/batch  
 * **Описание**: Позволяет отправлять массивы сущностей за один сетевой запрос. Это критически важно для первоначального наполнения базы или масштабного пересмотра каталога, минимизируя накладные расходы на установление TCP-соединений. Запрос обрабатывается асинхронно (через очереди Laravel), и API мгновенно возвращает job\_id для отслеживания прогресса.
