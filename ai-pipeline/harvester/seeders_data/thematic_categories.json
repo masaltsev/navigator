@@ -1,0 +1,149 @@
+[
+    {
+        "id": 1,
+        "code": "3",
+        "name": "Здоровье и уход",
+        "is_active": true,
+        "parent_code": null
+    },
+    {
+        "id": 2,
+        "code": "4",
+        "name": "Быт и социальная поддержка",
+        "is_active": true,
+        "parent_code": null
+    },
+    {
+        "id": 3,
+        "code": "5",
+        "name": "Активная жизнь",
+        "is_active": true,
+        "parent_code": null
+    },
+    {
+        "id": 4,
+        "code": "7",
+        "name": "Снижение памяти и деменция",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 5,
+        "code": "8",
+        "name": "Остеопороз и риски падений",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 6,
+        "code": "9",
+        "name": "Урологические состояния",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 7,
+        "code": "10",
+        "name": "Управление болью",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 8,
+        "code": "11",
+        "name": "Питание и диета",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 9,
+        "code": "12",
+        "name": "Зрение и здоровье глаз",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 10,
+        "code": "14",
+        "name": "Восстановление после инсульта",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 11,
+        "code": "15",
+        "name": "Травмы и реабилитация",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 12,
+        "code": "16",
+        "name": "Слух и слухопротезирование",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 13,
+        "code": "17",
+        "name": "Паллиативная помощь",
+        "is_active": true,
+        "parent_code": "3"
+    },
+    {
+        "id": 14,
+        "code": "18",
+        "name": "Нуждаемость в постороннем уходе",
+        "is_active": true,
+        "parent_code": "4"
+    },
+    {
+        "id": 15,
+        "code": "20",
+        "name": "Одинокое проживание",
+        "is_active": true,
+        "parent_code": "4"
+    },
+    {
+        "id": 16,
+        "code": "24",
+        "name": "Поддержание здоровья и ЗОЖ",
+        "is_active": true,
+        "parent_code": "5"
+    },
+    {
+        "id": 17,
+        "code": "25",
+        "name": "Общение и социализация",
+        "is_active": true,
+        "parent_code": "5"
+    },
+    {
+        "id": 18,
+        "code": "26",
+        "name": "Карьера и образование",
+        "is_active": true,
+        "parent_code": "5"
+    },
+    {
+        "id": 19,
+        "code": "27",
+        "name": "Уход за собой и стиль",
+        "is_active": true,
+        "parent_code": "5"
+    },
+    {
+        "id": 20,
+        "code": "28",
+        "name": "Творчество и увлечения",
+        "is_active": true,
+        "parent_code": "5"
+    },
+    {
+        "id": 21,
+        "code": "29",
+        "name": "Путешествия и туризм",
+        "is_active": true,
+        "parent_code": "5"
+    }
+]

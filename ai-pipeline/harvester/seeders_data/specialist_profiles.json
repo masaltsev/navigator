@@ -1,0 +1,98 @@
+[
+    {
+        "id": 1,
+        "code": "96",
+        "name": "Волонтер",
+        "is_active": true
+    },
+    {
+        "id": 2,
+        "code": "120",
+        "name": "Офтальмолог",
+        "is_active": true
+    },
+    {
+        "id": 3,
+        "code": "122",
+        "name": "Сурдолог",
+        "is_active": true
+    },
+    {
+        "id": 4,
+        "code": "123",
+        "name": "ЛОР (Оториноларинголог)",
+        "is_active": true
+    },
+    {
+        "id": 5,
+        "code": "125",
+        "name": "Уролог",
+        "is_active": true
+    },
+    {
+        "id": 6,
+        "code": "126",
+        "name": "Диетолог \/ Нутрициолог",
+        "is_active": true
+    },
+    {
+        "id": 7,
+        "code": "127",
+        "name": "Мануальный терапевт",
+        "is_active": true
+    },
+    {
+        "id": 8,
+        "code": "128",
+        "name": "Эрготерапевт",
+        "is_active": true
+    },
+    {
+        "id": 9,
+        "code": "129",
+        "name": "Физиотерапевт",
+        "is_active": true
+    },
+    {
+        "id": 10,
+        "code": "130",
+        "name": "Реабилитолог",
+        "is_active": true
+    },
+    {
+        "id": 11,
+        "code": "132",
+        "name": "Ревматолог",
+        "is_active": true
+    },
+    {
+        "id": 12,
+        "code": "134",
+        "name": "Травматолог-ортопед",
+        "is_active": true
+    },
+    {
+        "id": 13,
+        "code": "137",
+        "name": "Эндокринолог",
+        "is_active": true
+    },
+    {
+        "id": 14,
+        "code": "141",
+        "name": "Психиатр \/ Геронтопсихиатр",
+        "is_active": true
+    },
+    {
+        "id": 15,
+        "code": "142",
+        "name": "Невролог",
+        "is_active": true
+    },
+    {
+        "id": 16,
+        "code": "143",
+        "name": "Гериатр",
+        "is_active": true
+    }
+]

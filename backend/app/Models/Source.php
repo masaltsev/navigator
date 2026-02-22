@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasUuidPrimaryKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,6 +15,17 @@ class Source extends Model
     use HasFactory, HasUuidPrimaryKey, SoftDeletes;
 
     protected $guarded = [];
+
+    /**
+     * Organizer this source belongs to (for kind=org_website: site of that organizer).
+     * Enables Harvester to know which organizer to update when pushing enriched data.
+     *
+     * @return BelongsTo<Organizer, $this>
+     */
+    public function organizer(): BelongsTo
+    {
+        return $this->belongsTo(Organizer::class);
+    }
 
     /**
      * Parse profiles associated with this source.

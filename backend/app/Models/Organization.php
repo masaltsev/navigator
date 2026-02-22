@@ -29,11 +29,11 @@ class Organization extends Model
     }
 
     /**
-     * @return BelongsTo<OrganizationType, $this>
+     * @return BelongsToMany<OrganizationType, $this>
      */
-    public function organizationType(): BelongsTo
+    public function organizationTypes(): BelongsToMany
     {
-        return $this->belongsTo(OrganizationType::class);
+        return $this->belongsToMany(OrganizationType::class, 'organization_organization_types');
     }
 
     /**
@@ -53,11 +53,19 @@ class Organization extends Model
     }
 
     /**
-     * @return BelongsToMany<ProblemCategory, $this>
+     * @return BelongsToMany<ThematicCategory, $this>
      */
-    public function problemCategories(): BelongsToMany
+    public function thematicCategories(): BelongsToMany
     {
-        return $this->belongsToMany(ProblemCategory::class, 'organization_problem_categories');
+        return $this->belongsToMany(ThematicCategory::class, 'organization_thematic_categories');
+    }
+
+    /**
+     * @return BelongsToMany<SpecialistProfile, $this>
+     */
+    public function specialistProfiles(): BelongsToMany
+    {
+        return $this->belongsToMany(SpecialistProfile::class, 'organization_specialist_profiles');
     }
 
     /**

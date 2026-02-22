@@ -21,7 +21,7 @@ class OrganizationResource extends JsonResource
                 'type' => 'Organization',
                 'title' => $this->title,
                 'description' => $this->description ? mb_substr($this->description, 0, 150).'...' : null,
-                'organization_type' => $this->organizationType?->name,
+                'organization_types' => $this->organizationTypes->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
                 'coverage_level' => $this->coverageLevel?->name,
                 'venue' => $this->when(
                     $this->venues->isNotEmpty(),
@@ -35,10 +35,11 @@ class OrganizationResource extends JsonResource
                         ];
                     }
                 ),
-                'categories' => $this->problemCategories->map(fn ($cat) => [
+                'thematic_categories' => $this->thematicCategories->map(fn ($cat) => [
                     'id' => $cat->id,
                     'name' => $cat->name,
                 ]),
+                'specialist_profiles' => $this->specialistProfiles->map(fn ($p) => ['id' => $p->id, 'name' => $p->name]),
                 'services' => $this->services->take(3)->map(fn ($svc) => [
                     'id' => $svc->id,
                     'name' => $svc->name,
@@ -52,10 +53,7 @@ class OrganizationResource extends JsonResource
             'type' => 'Organization',
             'title' => $this->title,
             'description' => $this->description,
-            'organization_type' => [
-                'id' => $this->organizationType?->id,
-                'name' => $this->organizationType?->name,
-            ],
+            'organization_types' => $this->organizationTypes->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
             'ownership_type' => [
                 'id' => $this->ownershipType?->id,
                 'name' => $this->ownershipType?->name,
@@ -76,10 +74,11 @@ class OrganizationResource extends JsonResource
                     'is_headquarters' => $venue->pivot->is_headquarters ?? false,
                 ];
             }),
-            'categories' => $this->problemCategories->map(fn ($cat) => [
+            'thematic_categories' => $this->thematicCategories->map(fn ($cat) => [
                 'id' => $cat->id,
                 'name' => $cat->name,
             ]),
+            'specialist_profiles' => $this->specialistProfiles->map(fn ($p) => ['id' => $p->id, 'name' => $p->name]),
             'services' => $this->services->map(fn ($svc) => [
                 'id' => $svc->id,
                 'name' => $svc->name,

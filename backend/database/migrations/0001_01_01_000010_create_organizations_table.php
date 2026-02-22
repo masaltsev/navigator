@@ -8,6 +8,8 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Organization types are linked via pivot organization_organization_types (M:N).
      */
     public function up(): void
     {
@@ -21,11 +23,6 @@ return new class extends Migration
             $table->string('ogrn')->nullable()->index()->unique();
 
             $table->jsonb('site_urls')->nullable();
-
-            $table->foreignId('organization_type_id')
-                ->nullable()
-                ->constrained('organization_types')
-                ->nullOnDelete();
 
             $table->foreignId('ownership_type_id')
                 ->nullable()

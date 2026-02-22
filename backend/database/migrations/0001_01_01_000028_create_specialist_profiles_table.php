@@ -8,10 +8,12 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Specialist profiles (who works in the organization). Positive Aging naming.
      */
     public function up(): void
     {
-        Schema::create('problem_categories', function (Blueprint $table) {
+        Schema::create('specialist_profiles', function (Blueprint $table) {
             $table->id();
 
             $table->string('name')->index();
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('problem_categories');
+        Schema::dropIfExists('specialist_profiles');
     }
 };

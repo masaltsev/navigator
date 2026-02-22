@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ProblemCategory extends Model
+/**
+ * Specialist profiles (who works in the organization). Positive Aging naming.
+ */
+class SpecialistProfile extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProblemCategoryFactory> */
+    /** @use HasFactory<\Database\Factories\SpecialistProfileFactory> */
     use HasFactory, SoftDeletes;
 
     protected $guarded = [];
@@ -20,15 +22,7 @@ class ProblemCategory extends Model
      */
     public function organizations(): BelongsToMany
     {
-        return $this->belongsToMany(Organization::class, 'organization_problem_categories');
-    }
-
-    /**
-     * @return HasMany<Article, $this>
-     */
-    public function articles(): HasMany
-    {
-        return $this->hasMany(Article::class, 'related_problem_category_id');
+        return $this->belongsToMany(Organization::class, 'organization_specialist_profiles');
     }
 
     /**

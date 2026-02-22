@@ -8,23 +8,25 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Pivot: organizations <-> thematic_categories (life situations).
      */
     public function up(): void
     {
-        Schema::create('organization_problem_categories', function (Blueprint $table) {
+        Schema::create('organization_thematic_categories', function (Blueprint $table) {
             $table->uuid('organization_id');
-            $table->foreignId('problem_category_id');
+            $table->foreignId('thematic_category_id');
 
-            $table->primary(['organization_id', 'problem_category_id']);
+            $table->primary(['organization_id', 'thematic_category_id']);
 
             $table->foreign('organization_id')
                 ->references('id')
                 ->on('organizations')
                 ->cascadeOnDelete();
 
-            $table->foreign('problem_category_id')
+            $table->foreign('thematic_category_id')
                 ->references('id')
-                ->on('problem_categories')
+                ->on('thematic_categories')
                 ->cascadeOnDelete();
         });
     }
@@ -34,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('organization_problem_categories');
+        Schema::dropIfExists('organization_thematic_categories');
     }
 };

@@ -29,10 +29,10 @@ return new class extends Migration
             $table->text('excerpt')->nullable();
             $table->string('featured_image_url')->nullable();
 
-            // Relationships
-            $table->foreignId('related_problem_category_id')
+            // Relationships (life situation / thematic category)
+            $table->foreignId('related_thematic_category_id')
                 ->nullable()
-                ->constrained('problem_categories')
+                ->constrained('thematic_categories')
                 ->nullOnDelete();
 
             $table->foreignId('related_service_id')

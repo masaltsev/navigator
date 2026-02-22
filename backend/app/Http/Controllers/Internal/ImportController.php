@@ -11,8 +11,9 @@ use App\Models\Organization;
 use App\Models\OrganizationType;
 use App\Models\Organizer;
 use App\Models\OwnershipType;
-use App\Models\ProblemCategory;
 use App\Models\Service;
+use App\Models\SpecialistProfile;
+use App\Models\ThematicCategory;
 use App\Models\Venue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,10 +42,11 @@ class ImportController extends Controller
      *     "ai_source_trace": [...]
      *   },
      *   "classification": {
-     *     "organization_type_code": "44",
+     *     "organization_type_codes": ["44"],
      *     "ownership_type_code": "164",
      *     "coverage_level_id": 2,
-     *     "problem_category_codes": ["82"],
+     *     "thematic_category_codes": ["7", "12"],
+     *     "specialist_profile_codes": ["143"],
      *     "service_codes": ["81", "70"]
      *   },
      *   "venues": [...]
@@ -66,10 +68,12 @@ class ImportController extends Controller
             'ai_metadata.ai_explanation' => 'nullable|string',
             'ai_metadata.ai_source_trace' => 'nullable|array',
             'classification' => 'required|array',
-            'classification.organization_type_code' => 'nullable|string',
+            'classification.organization_type_codes' => 'nullable|array',
+            'classification.organization_type_codes.*' => 'string',
             'classification.ownership_type_code' => 'nullable|string',
             'classification.coverage_level_id' => 'nullable|integer',
-            'classification.problem_category_codes' => 'nullable|array',
+            'classification.thematic_category_codes' => 'nullable|array',
+            'classification.specialist_profile_codes' => 'nullable|array',
             'classification.service_codes' => 'nullable|array',
             'venues' => 'nullable|array',
             'venues.*.address_raw' => 'required|string',
@@ -108,13 +112,20 @@ class ImportController extends Controller
                 $this->processVenues($organizer, $data['venues'], $data['entity_type'] === 'Organization');
             }
 
-            // Attach problem categories and services (for Organization)
-            if ($data['entity_type'] === 'Organization' && ! empty($classification['problem_category_codes'])) {
-                $this->attachProblemCategories($entity, $classification['problem_category_codes']);
-            }
-
-            if ($data['entity_type'] === 'Organization' && ! empty($classification['service_codes'])) {
-                $this->attachServices($entity, $classification['service_codes']);
+            // Attach thematic categories, organization types, specialist profiles, services (for Organization)
+            if ($data['entity_type'] === 'Organization') {
+                if (! empty($classification['thematic_category_codes'])) {
+                    $this->attachThematicCategories($entity, $classification['thematic_category_codes']);
+                }
+                if (! empty($classification['organization_type_codes'])) {
+                    $this->attachOrganizationTypes($entity, $classification['organization_type_codes']);
+                }
+                if (! empty($classification['specialist_profile_codes'])) {
+                    $this->attachSpecialistProfiles($entity, $classification['specialist_profile_codes']);
+                }
+                if (! empty($classification['service_codes'])) {
+                    $this->attachServices($entity, $classification['service_codes']);
+                }
             }
 
             return response()->json([
@@ -272,11 +283,6 @@ class ImportController extends Controller
         array $aiMetadata,
         string $status
     ): Organization {
-        $organizationType = null;
-        if (! empty($classification['organization_type_code'])) {
-            $organizationType = OrganizationType::where('code', $classification['organization_type_code'])->first();
-        }
-
         $ownershipType = null;
         if (! empty($classification['ownership_type_code'])) {
             $ownershipType = OwnershipType::where('code', $classification['ownership_type_code'])->first();
@@ -297,7 +303,6 @@ class ImportController extends Controller
                 'description' => $data['description'] ?? null,
                 'inn' => $data['inn'] ?? null,
                 'ogrn' => $data['ogrn'] ?? null,
-                'organization_type_id' => $organizationType?->id,
                 'ownership_type_id' => $ownershipType?->id,
                 'coverage_level_id' => $coverageLevel?->id,
                 'works_with_elderly' => $aiMetadata['works_with_elderly'],
@@ -436,12 +441,30 @@ class ImportController extends Controller
     }
 
     /**
-     * Attach problem categories to organization by codes.
+     * Attach thematic categories (life situations) to organization by codes.
      */
-    private function attachProblemCategories(Organization $organization, array $codes): void
+    private function attachThematicCategories(Organization $organization, array $codes): void
     {
-        $categoryIds = ProblemCategory::whereIn('code', $codes)->pluck('id');
-        $organization->problemCategories()->sync($categoryIds);
+        $categoryIds = ThematicCategory::whereIn('code', $codes)->pluck('id');
+        $organization->thematicCategories()->sync($categoryIds);
+    }
+
+    /**
+     * Attach organization types to organization by codes (M:N).
+     */
+    private function attachOrganizationTypes(Organization $organization, array $codes): void
+    {
+        $typeIds = OrganizationType::whereIn('code', $codes)->pluck('id');
+        $organization->organizationTypes()->sync($typeIds);
+    }
+
+    /**
+     * Attach specialist profiles to organization by codes.
+     */
+    private function attachSpecialistProfiles(Organization $organization, array $codes): void
+    {
+        $profileIds = SpecialistProfile::whereIn('code', $codes)->pluck('id');
+        $organization->specialistProfiles()->sync($profileIds);
     }
 
     /**

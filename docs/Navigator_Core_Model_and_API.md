@@ -28,9 +28,10 @@
 
 | Сущность | Описание и бизнес-логика | Ключевые поля и типы данных |
 | :---- | :---- | :---- |
-| ProblemCategory | Иерархический классификатор проблематик, на решение которых направлена деятельность. Ранее hp\_listing\_category. Служит первичным вектором для алгоритмов рекомендаций. | id (PK, int), name (string), code (string), is\_active (boolean). |
-| Service | Детализированный перечень конкретных услуг. Классификатор охватывает спектр от стационарного ухода (Психоневрологические интернаты — 65\) до образовательных курсов (Компьютерная грамотность — 84\) и медицинских услуг (Гериатры — 143). | id (PK, int), name (string), code (string), is\_active (boolean), parent\_id (FK, int, nullable). |
-| OrganizationType | Типология учреждений. Позволяет отличать Центры активного долголетия (44) от Специализированных медицинских центров (34) или Центров серебряного волонтерства (174). | id (PK, int), name (string), code (string), is\_active (boolean). |
+| ThematicCategory | Иерархический классификатор жизненных ситуаций (Positive Aging naming). Ранее hp\_listing\_category. Служит первичным вектором для алгоритмов рекомендаций. Восстанавливает двухуровневую иерархию через parent_id. | id (PK, int), name (string), code (string), is\_active (boolean), parent_id (FK, int, nullable). |
+| Service | Детализированный перечень конкретных услуг. Классификатор охватывает спектр от стационарного ухода до образовательных курсов и медицинских услуг. | id (PK, int), name (string), code (string), is\_active (boolean), parent\_id (FK, int, nullable). |
+| OrganizationType | Типология учреждений. Позволяет отличать Центры активного долголетия от Специализированных медицинских центров или Центров серебряного волонтерства. Связь с организациями через pivot M:N. | id (PK, int), name (string), code (string), is\_active (boolean). |
+| SpecialistProfile | Профили специалистов, работающих в организациях (Positive Aging naming). Включает врачей, социальных работников, волонтеров. Связь с организациями через pivot M:N. | id (PK, int), name (string), code (string), is\_active (boolean). |
 | OwnershipType | Форма собственности, определяющая юридический статус. Включает государственные (152), муниципальные (153), частные (163) структуры и НКО (162). | id (PK, int), name (string), code (string), is\_active (boolean). |
 | CoverageLevel | Территориальный охват деятельности (локальный, муниципальный, региональный, федеральный). Используется для гео-приоритизации поисковой выдачи. | id (PK, int), name (string), weight\_index (int). |
 | EventCategory | Типология активностей (лекции, тренировки ЗОЖ, собрания, мастер-классы). Критично для фильтрации в ленте событий. | id (PK, int), name (string), slug (string, unique), code (string, nullable, unique), icon\_url (string), timestamps, softDeletes. Примечание: slug используется для URL, code — для семантической идентификации в AI-пайплайне. |
@@ -42,7 +43,7 @@
 | Таблица (Сущность) | Структура полей | Назначение и контекст |
 | :---- | :---- | :---- |
 | organizers | id (UUID, PK), organizable\_type (string, index), organizable\_id (UUID, index), contact\_phones (JSONB), contact\_emails (JSONB), status (string, index). | Универсальная точка входа. Поле organizable\_type хранит строковой алиас (Morph Map) целевой модели. Использование типа JSONB для контактов позволяет хранить массивы номеров, очищенных алгоритмами Dadata, без избыточных JOIN-запросов. |
-| organizations | id (UUID, PK), title (string), description (text), inn (string, unique, index), ogrn (string, unique, index), site\_urls (JSONB), organization\_type\_id (FK), ownership\_type\_id (FK), coverage\_level\_id (FK), works\_with\_elderly (boolean, index), ai\_confidence\_score (decimal, 8,4), ai\_explanation (text), ai\_source\_trace (JSONB), target\_audience (JSONB), vk\_group\_id (bigInteger, nullable, index), ok\_group\_id (bigInteger, nullable, index), status (string, index), timestamps, softDeletes. | Хранилище профилей формальных юридических лиц. Поля inn и ogrn проходят предварительную очистку от нецифровых символов на этапе парсинга перед отправкой в API Dadata. Поля vk\_group\_id и ok\_group\_id используются для интеграции с мини-приложениями ВКонтакте и Одноклассников. |
+| organizations | id (UUID, PK), title (string), description (text), inn (string, unique, index), ogrn (string, unique, index), site\_urls (JSONB), ownership\_type\_id (FK), coverage\_level\_id (FK), works\_with\_elderly (boolean, index), ai\_confidence\_score (decimal, 8,4), ai\_explanation (text), ai\_source\_trace (JSONB), target\_audience (JSONB), vk\_group\_id (bigInteger, nullable, index), ok\_group\_id (bigInteger, nullable, index), status (string, index), timestamps, softDeletes. | Хранилище профилей формальных юридических лиц. Поля inn и ogrn проходят предварительную очистку от нецифровых символов на этапе парсинга перед отправкой в API Dadata. Поля vk\_group\_id и ok\_group\_id используются для интеграции с мини-приложениями ВКонтакте и Одноклассников. Типы организаций привязываются через pivot organization_organization_types (M:N). |
 | initiative\_groups | id (UUID, PK), name (string), description (text), community\_focus (string), established\_date (date, nullable). | Хранилище профилей неформальных коллективов (например, «группа бабушек в местном парке»), не имеющих юридических реквизитов. |
 
 Важнейшим аспектом сущности organizations является интеграция специфических полей для взаимодействия с AI-пайплайном. Процесс модерации и обогащения данных требует сохранения не только финального вердикта искусственного интеллекта, но и метрик его уверенности, а также цепочки рассуждений.
@@ -83,7 +84,9 @@
 
 ### **Связующие матрицы (Pivot Tables)**
 
-* organization\_problem\_categories: (organization\_id, problem\_category\_id). Отражает исторический массив hp\_listing\_category.  
+* organization\_thematic\_categories: (organization\_id, thematic\_category\_id). Отражает исторический массив hp\_listing\_category (жизненные ситуации, Positive Aging naming).  
+* organization\_organization\_types: (organization\_id, organization\_type\_id). Связь M:N для типов организаций (одна организация может иметь несколько типов).  
+* organization\_specialist\_profiles: (organization\_id, specialist\_profile\_id). Связь M:N для профилей специалистов (кто работает в организации).  
 * organization\_services: (organization\_id, service\_id). Отражает массив hp\_listing\_service.  
 * **event\_event\_categories**: (event\_id, event\_category\_id). Pivot таблица для связи событий с категориями. Название изменено на event\_event\_categories для избежания конфликта с справочником event\_categories.  
 * event\_venues: (event\_id, venue\_id). Событие может транслироваться из нескольких точек (смешанный формат).  
@@ -102,7 +105,7 @@
 | content | longText, nullable | Локально хранимый HTML-контент из WYSIWYG-редакторов. Позволяет хранить статьи непосредственно в базе данных без зависимости от внешних систем |
 | excerpt | text, nullable | Краткое описание статьи для SEO и превью в списках |
 | featured\_image\_url | string, nullable | URL главного изображения статьи для отображения в карточках и социальных сетях |
-| related\_problem\_category\_id | FK (problem\_categories), nullable | Связь с категорией проблематики, к которой относится статья |
+| related\_thematic\_category\_id | FK (thematic\_categories), nullable | Связь с жизненной ситуацией (thematic category), к которой относится статья |
 | related\_service\_id | FK (services), nullable | Связь с конкретной услугой, которую описывает статья |
 | organization\_id | UUID, FK (organizations), nullable | Связь с организацией-автором или организацией, о которой написана статья |
 | status | enum (draft, published, archived), default: draft, index | Статус публикации: черновик, опубликовано, архивировано |
@@ -368,7 +371,8 @@ JSON
 * **Query-параметры**:  
   * city\_fias\_id (string): Фильтрация по идентификатору города из Dadata для исключения неоднозначностей с одноименными населенными пунктами.  
   * lat, lng (float), radius\_km (int): Геопространственный поиск через ST\_DWithin.  
-  * problem\_category\_id (array of integers): Фильтр по решаемым проблемам.  
+  * thematic\_category\_id (array of integers): Фильтр по жизненным ситуациям (thematic categories).  
+  * organization\_type\_id (array of integers): Фильтр по типам организаций (M:N).  
   * service\_id (array of integers): Поиск по конкретным услугам (например, 116 — долговременный уход).  
   * page, per\_page: Пагинация.  
 * **Структура ответа (JSON)**:  
@@ -389,8 +393,10 @@ JSON
             "is\_headquarters": true  
           }  
         \],  
-        "categories": \[{"id": 7, "name": "Проблемы с памятью и когнитивные нарушения"}\],  
-        "services": \[{"id": 116, "name": "Долговременный уход"}\]  
+        "thematic\_categories": \[{"id": 7, "name": "Снижение памяти и деменция"}\],  
+        "organization\_types": \[{"id": 44, "name": "Центр активного долголетия"}\],  
+        "specialist\_profiles": \[{"id": 143, "name": "Гериатр"}\],  
+        "services": \[{"id": 116, "name": "Система долговременного ухода (в стационаре)"}\]  
       }  
     \],  
     "meta": { "total\_items": 1240, "current\_page": 1, "last\_page": 62 }  
@@ -440,9 +446,10 @@ JSON
       "ai\_source\_trace": \[...\] \-- nullable, массив объектов с информацией об источниках  
     },  
     "classification": {  
-      "problem\_category\_codes": \["7", "12"\], \-- nullable, массив строк  
+      "thematic\_category\_codes": \["7", "12"\], \-- nullable, массив строк (жизненные ситуации)  
       "service\_codes": \["81", "83"\], \-- nullable, массив строк  
-      "organization\_type\_code": "174", \-- nullable, только для Organization  
+      "organization\_type\_codes": \["174", "44"\], \-- nullable, массив строк (M:N, несколько типов)  
+      "specialist\_profile\_codes": \["143", "142"\], \-- nullable, массив строк (профили специалистов)  
       "ownership\_type\_code": "162", \-- nullable, только для Organization  
       "coverage\_level\_id": 2 \-- nullable, integer, только для Organization  
     },  
@@ -509,7 +516,7 @@ JSON
 
 **Стратегия миграции и различия с текущей JSON‑схемой**
 
-Текущая реализация системы (отраженная в import.txt и navigator\_listing\_schema\_copy.json) является плоской (flat schema), что свойственно парадигме метаданных (post\_meta) в WordPress. Этот подход позволяет быстро запускать MVP, но приводит к катастрофической деградации производительности при масштабировании базы данных, так как любые фильтры требуют ресурсоемких SQL-запросов с множественными JOIN-соединениями к одной и той же таблице метаданных. Переход на нормализованную реляционную структуру Navigator Core требует глубокой реструктуризации существующих данных.
+Текущая реализация системы (отраженная в import.txt и в схеме `docs/archive/wp-schema/navigator_listing_schema_copy.json`) является плоской (flat schema), что свойственно парадигме метаданных (post\_meta) в WordPress. Этот подход позволяет быстро запускать MVP, но приводит к катастрофической деградации производительности при масштабировании базы данных, так как любые фильтры требуют ресурсоемких SQL-запросов с множественными JOIN-соединениями к одной и той же таблице метаданных. Переход на нормализованную реляционную структуру Navigator Core требует глубокой реструктуризации существующих данных.
 
 ### **Трансформация существующих полей**
 
@@ -520,7 +527,7 @@ JSON
    * **Геолокация и адреса:** Ранее координаты хранились как разрозненные строки (hp\_latitude, hp\_longitude), что приводило к программным ошибкам (в скрипте import.txt прямо указано: "Исправлена обработка координат: широта и долгота меняются местами"). Поля hp\_location, hp\_region и hp\_town также дублировали информацию. В новой модели вся эта группа полей полностью удаляется из родительских таблиц. Данные мигрируют в нормализованную таблицу venues, где координаты инкапсулируются в защищенный бинарный тип Geometry(Point) СУБД PostGIS. Это делает невозможным некорректное чтение осей и открывает доступ к мощным гео-функциям.  
    * **Контактная информация:** Поля hp\_phone, hp\_email и hp\_site в WordPress объединялись в единую строку через запятую (implode(', ', $value)). Эта практика делает невозможным поиск по конкретному номеру или валидацию формата. В новой схеме они трансформируются в столбцы типа JSONB (contact\_phones, contact\_emails), что сохраняет гибкость хранения множественных контактов, но возвращает возможность индексации и структурированного доступа.  
 3. **Трансформация в реляционные связи (Many-to-Many)**:  
-   * Данные, хранившиеся как строки вида "Проблемы с памятью и когнитивные нарушения \- 7" в массивах hp\_listing\_category, hp\_listing\_service, hp\_listing\_type, больше не хранятся в виде текстовых строф. При миграции скрипт извлекает числовой идентификатор (например, 7\) и создает физическую связь (FK) в сводной таблице organization\_problem\_categories, связывающей организацию со справочником problem\_categories. Это обеспечивает ссылочную целостность и исключает риск опечаток.
+   * Данные, хранившиеся как строки в массивах hp\_listing\_category, hp\_listing\_service, hp\_listing\_type, больше не хранятся в виде текстовых строф. При миграции скрипт извлекает числовой идентификатор и создает физические связи (FK) в сводных таблицах: organization\_thematic\_categories (жизненные ситуации), organization\_organization\_types (типы организаций, M:N), organization\_specialist\_profiles (профили специалистов, M:N), organization\_services (услуги). Это обеспечивает ссылочную целостность и исключает риск опечаток.
 
 ### **Фундаментальные архитектурные добавления**
 

@@ -18,6 +18,17 @@ class Organizer extends Model
     protected $guarded = [];
 
     /**
+     * Sources linked to this organizer (e.g. org_website for Organization).
+     * Harvester uses this to know which organizer to update when pushing enriched data.
+     *
+     * @return HasMany<Source, $this>
+     */
+    public function sources(): HasMany
+    {
+        return $this->hasMany(Source::class);
+    }
+
+    /**
      * Polymorphic router to either Organization, InitiativeGroup or Individual.
      *
      * @return MorphTo<Model, $this>
