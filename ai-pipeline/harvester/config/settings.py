@@ -25,6 +25,7 @@ class HarvesterSettings(BaseSettings):
     # Dadata (Sprint 2+)
     dadata_api_key: str = ""
     dadata_secret_key: str = ""
+    dadata_use_clean: bool = False
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

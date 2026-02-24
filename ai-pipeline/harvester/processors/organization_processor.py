@@ -9,6 +9,7 @@ existing_entity_id, полученного от Harvester до вызова LLM.
 import logging
 from typing import Callable, Optional
 
+from enrichment.dadata_client import DadataClient, GeocodingResult
 from processors.deepseek_client import DeepSeekClient
 from prompts.dictionaries import load_all_dictionaries
 from prompts.organization_prompt import (
@@ -223,8 +224,31 @@ class OrganizationProcessor:
 # ---------------------------------------------------------------------------
 
 
-def to_core_import_payload(org: OrganizationOutput) -> dict:
-    """Конвертация OrganizationOutput → формат POST /api/internal/import/organizer."""
+def to_core_import_payload(
+    org: OrganizationOutput,
+    geo_results: Optional[list[GeocodingResult]] = None,
+) -> dict:
+    """
+    OrganizationOutput → POST /api/internal/import/organizer payload.
+
+    If geo_results are provided (from DadataClient), venues are enriched
+    with fias_id, geo_lat, geo_lon. The list must be parallel to org.venues.
+    """
+    venues = []
+    for i, v in enumerate(org.venues):
+        venue_data: dict = {
+            "address_raw": v.address_raw,
+            "address_comment": v.address_comment,
+        }
+        if geo_results and i < len(geo_results):
+            geo = geo_results[i]
+            if geo.fias_id:
+                venue_data["fias_id"] = geo.fias_id
+            if geo.geo_lat is not None and geo.geo_lon is not None:
+                venue_data["geo_lat"] = geo.geo_lat
+                venue_data["geo_lon"] = geo.geo_lon
+        venues.append(venue_data)
+
     return {
         "source_reference": org.source_reference,
         "entity_type": "Organization",
@@ -246,10 +270,7 @@ def to_core_import_payload(org: OrganizationOutput) -> dict:
             "service_codes": org.classification.service_codes,
             "specialist_profile_codes": org.classification.specialist_profile_codes,
         },
-        "venues": [
-            {"address_raw": v.address_raw, "address_comment": v.address_comment}
-            for v in org.venues
-        ],
+        "venues": venues,
         "contacts": {
             "phones": org.contacts.phones,
             "emails": org.contacts.emails,

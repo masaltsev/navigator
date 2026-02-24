@@ -12,9 +12,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/events', [EventController::class, 'index']);
 });
 
-// Internal API for AI pipeline (requires authentication)
-// TODO: Add authentication middleware (e.g., auth:sanctum or API key middleware)
-Route::prefix('internal')->group(function () {
+Route::prefix('internal')->middleware('auth.internal')->group(function () {
     Route::post('/import/organizer', [ImportController::class, 'importOrganizer']);
     Route::post('/import/event', [ImportController::class, 'importEvent']);
     Route::post('/import/batch', [ImportController::class, 'importBatch']);

@@ -1,0 +1,42 @@
+{
+  "_comment": "Expected payload for КЦСОН Вологда fixture. Used by test_payload_builder.py",
+  "source_reference": "https://kcson-vologda.gov35.ru",
+  "entity_type": "Organization",
+  "title": "БУ СО ВО «Комплексный центр социального обслуживания населения города Вологды»",
+  "short_title": "КЦСОН г. Вологды",
+  "description": "Государственное бюджетное учреждение социального обслуживания Вологодской области...",
+  "inn": "3525155950",
+  "ogrn": "1043500037498",
+  "ai_metadata": {
+    "decision": "accepted",
+    "ai_explanation": "Организация является комплексным центром социального обслуживания, оказывающим услуги гражданам пожилого возраста...",
+    "ai_confidence_score": 0.95,
+    "works_with_elderly": true
+  },
+  "classification": {
+    "organization_type_codes": ["141"],
+    "ownership_type_code": "154",
+    "thematic_category_codes": ["7", "24"],
+    "service_codes": ["70", "75", "91"],
+    "specialist_profile_codes": ["143", "142"]
+  },
+  "venues": [
+    {
+      "address_raw": "160000, г. Вологда, ул. Козлёнская, д. 35",
+      "address_comment": null,
+      "fias_id": "test-fias-id-001",
+      "geo_lat": 59.2239,
+      "geo_lon": 39.8842
+    }
+  ],
+  "contacts": {
+    "phones": ["+7 (8172) 72-13-44", "+7 (8172) 72-01-55"],
+    "emails": ["kcson_vologda@gov35.ru"]
+  },
+  "site_urls": ["https://kcson-vologda.gov35.ru"],
+  "vk_group_url": "https://vk.com/kcson_vologda",
+  "ok_group_url": null,
+  "telegram_url": "https://t.me/kcson_vologda",
+  "target_audience": ["elderly", "relatives"],
+  "suggested_taxonomy": []
+}

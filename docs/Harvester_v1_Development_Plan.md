@@ -251,7 +251,7 @@ navigator/
 
 ## 10. Прогресс и статус спринтов
 
-> Обновлено: 2026-02-24
+> Обновлено: 2026-02-24 (Sprint 3)
 
 ### Спринт 1 — ЗАВЕРШЁН
 
@@ -284,24 +284,59 @@ navigator/
 - **Классификация LLM-first**: LLM возвращает коды справочников напрямую (не fuzzy match). Post-hoc валидация в `_validate_codes()` с автокоррекцией перепутанных справочников.
 - **Cache hit**: system prompt ~15K tokens кэшируется DeepSeek API (prefix caching). При batch ожидается >90% hit rate. Стоимость: ~$2.75 за 5 000 URL (в 3-5x дешевле прогноза).
 
-### Спринт 2 — ПРЕДСТОИТ
+### Спринт 2 — ЗАВЕРШЁН
 
-**Что из Sprint 2 уже частично готово:**
+> Обновлено: 2026-02-24. Отчёт: `harvester/docs/reports/2026-02-24__sprint2-classification-core-api.md`
 
-| # | Задача по плану | Факт | Остаток |
-|---|----------------|------|---------|
-| 2.1 | classifier.py | Логика в OrganizationProcessor + промптах (LLM классифицирует напрямую) | Отдельный classifier.py не нужен — пересмотреть |
-| 2.3 | confidence_scorer.py | AIConfidenceMetadata в schemas.py, decision routing в OrganizationProcessor | Пересмотреть — может быть не нужен |
-| 2.4 | payload_builder.py | `to_core_import_payload()` в organization_processor.py | Пересмотреть — может быть не нужен |
+| # | Задача | Статус | Заметки |
+|---|--------|--------|---------|
+| 2.1 | classifier.py | **Не нужен** | LLM-first: LLM классифицирует напрямую, post-hoc валидация в `_validate_codes()`. Отдельный модуль избыточен |
+| 2.2 | `enrichment/dadata_client.py` — геокодирование | **Done** | Async httpx, clean/suggest API, graceful degradation без ключей, retry |
+| 2.3 | confidence_scorer.py | **Не нужен** | AIConfidenceMetadata + decision routing в OrganizationProcessor покрывают полностью |
+| 2.4 | payload_builder.py | **Не нужен** | `to_core_import_payload()` расширен поддержкой Dadata-enriched venues |
+| 2.5 | `core_client/api.py` — HTTP-клиент к Core | **Done** | Mock mode без URL, retry, метрики. Полная State Machine в моке |
+| 2.6 | E2E: URL → payload → POST в Core | **Done** | CLI: `--to-core` (Dadata + Core), `--enrich-geo` (только Dadata). Mock mode при отсутствии CORE_API_URL |
+| 2.7 | Fixtures: HTML-снапшоты для тестов | **Done** | `kcson_vologda_markdown.txt`, `nko_obraz_zhizni_markdown.txt`, `expected_payload_kcson.json` |
 
-**Что нужно сделать:**
+**Дополнительно в Sprint 2:**
 
-| # | Задача | Статус |
-|---|--------|--------|
-| 2.2 | `enrichment/dadata_client.py` — геокодирование | Не начато. Ключи Dadata в .env |
-| 2.5 | `core_client/api.py` — HTTP-клиент к Core | Не начато. Контракт Core API готов (ImportController обновлён) |
-| 2.6 | E2E: URL → payload → POST в Core | Не начато. Блокировался G5/G6/G8 — теперь решены |
-| 2.7 | Fixtures: HTML-снапшоты | Не начато |
+| Что | Файлы/детали |
+|-----|-------------|
+| Fix `target_audience` validation: `string` → `array` | `ImportController.php`: соответствие jsonb-колонке и array cast |
+| 41 новый unit-тест (итого 76) | `test_dadata_client.py` (14), `test_core_client.py` (13), `test_payload_builder.py` (14) |
+| `to_core_import_payload` с поддержкой geo | Venues обогащаются fias_id, geo_lat, geo_lon из Dadata |
+
+**Архитектурные решения Sprint 2:**
+- **Dadata suggest-first**: suggest API (бесплатный, 10K/день, растёт с подпиской) по умолчанию. Clean API (платный, higher accuracy) — opt-in через `DADATA_USE_CLEAN=true`.
+- **Core client mock mode**: при пустом `CORE_API_URL` клиент валидирует payload локально и воспроизводит State Machine (accepted→approved/pending, needs_review→pending, rejected→rejected). Позволяет разрабатывать и тестировать без запущенного Core.
+- **Graceful degradation**: каждый компонент (Dadata, Core) работает автономно. Отсутствие ключей не ломает пайплайн — просто пропускает обогащение.
+
+### Спринт 3 — ЗАВЕРШЁН
+
+> Обновлено: 2026-02-24. Отчёт: `harvester/docs/reports/2026-02-24__sprint3-multipage-celery.md`
+
+| # | Задача | Статус | Заметки |
+|---|--------|--------|---------|
+| 3.1 | `strategies/multi_page.py` — multi-page crawl | **Done** | 17 паттернов подстраниц, discovery из markdown, priority scoring, merge ≤30K chars. Закрывает H1, H2 |
+| 3.2 | Генерация CSS-шаблонов для КЦСОН | **Done** | `SocinfoExtractor` (markdown-based, 0 LLM-токенов). 10 полей, 31 тест, 8 реальных сайтов. CSS fragile из-за stripped classes — выбран markdown-подход |
+| 3.3 | `strategies/css_strategy.py` — CSS-стратегия | **Done** | `CssTemplateRegistry`: load/has/get/build_extraction_config. Singleton + StrategyRouter-совместимый |
+| 3.4 | Celery: `workers/celery_app.py`, `workers/tasks.py` | **Done** | crawl_and_enrich (single URL, retry 2x), process_batch (fan-out group). async через asyncio.run() |
+| 3.5 | Docker: Dockerfile + docker-compose | **Done** | Multi-stage (worker/cli/test), redis:7-alpine, healthcheck, .dockerignore |
+| 3.6 | Batch-тест: 50 организаций | **Done** | 50 URL из Core (12 КЦСОН, 8 мед., 8 socinfo, 7 НКО, 15 прочих). 45/50 успех, 25 accepted, 14 rejected, 6 needs_review. Cost: $0.0005/URL. 262 HTML-снимка сохранены |
+
+**Дополнительно в Sprint 3:**
+
+| Что | Файлы/детали |
+|-----|-------------|
+| CLI: `--multi-page`, `--site-extract` флаги | `run_single_url.py`: multi-page crawl + site extraction (0 LLM-токенов для socinfo.ru) |
+| `strategies/site_extractors/` | `SiteExtractorRegistry` + `SocinfoExtractor`: auto-detect platform, extract 10 полей из markdown |
+| 78 новых unit-тестов (итого 187) | `test_multi_page.py` (25), `test_css_strategy.py` (10), `test_celery_tasks.py` (12), `test_socinfo_extractor.py` (31) |
+
+**Архитектурные решения Sprint 3:**
+- **Multi-page merge**: каждая страница в отдельной секции с header (label + URL). Main page first, limit 30K total. Подстраницы приоритизированы: kontakty/rekvizity (100) > o-nas/uslugi (50) > struktura (25).
+- **Celery + async**: `asyncio.run()` внутри sync-таска Celery. Один event loop на task, чистая изоляция. `worker_max_tasks_per_child=50` для предотвращения утечек Playwright.
+- **Docker multi-stage**: единый Dockerfile, три target (worker, cli, test). docker-compose с healthcheck Redis и persistent volume.
+- **Site Extractors vs CSS**: Crawl4AI `cleaned_html` теряет class/id → CSS-селекторы ненадёжны. Markdown от одной CMS стабилен → regex-based извлечение из markdown (SocinfoExtractor). Расширяемо: новая платформа = новый файл в `site_extractors/`.
 
 ---
 
@@ -314,8 +349,8 @@ navigator/
 
 | # | Приоритет | Задача | Источник | Когда |
 |---|-----------|--------|----------|-------|
-| **H1** | 🟡 | Multi-page стратегия: обход /kontakty, /o-nas, /uslugi, слияние markdown | Sprint 1.10 (P3, P7): адреса и email не извлекаются с подстраниц | Sprint 3 (3.1) |
-| **H2** | 🟡 | Title: на сайтах без явного юрлица на главной LLM перефразирует название | Sprint 1.10 (P4): neurology.ru → «Российский центр неврологии» вместо ФГБНУ | Sprint 3 (multi-page) |
+| **H1** | ~~🟡~~ | ~~Multi-page стратегия: обход /kontakty, /o-nas, /uslugi, слияние markdown~~ | **Done.** `strategies/multi_page.py` — 17 паттернов, discovery, merge ≤30K | Sprint 3 ✅ |
+| **H2** | ~~🟡~~ | ~~Title: на сайтах без явного юрлица LLM перефразирует название~~ | **Done.** Multi-page crawl подтягивает /o-nas, /svedeniya | Sprint 3 ✅ |
 | **H3** | 🟡 | Firecrawl fallback для SPA-сайтов | Sprint 1.10 (P5): orateatr.com — Playwright не загружает SPA | Sprint 4 (4.5) |
 | **H4** | 🟢 | `suggested_taxonomy` пустой во всех тестах | Sprint 1.10 (P6): LLM не предлагает новые термины | Донастройка few-shot примеров |
 | **H5** | 🟢 | org_type_codes пустой для НКО/фондов | Sprint 1.10 ретест: после автокоррекции org_types = [] для «Образ жизни» | Добавить код НКО в org_types или few-shot пример |
@@ -332,21 +367,28 @@ navigator/
 | **B3** | 🔴 | Дедупликация событий: `updateOrCreate` по `(organizer_id, source_reference)` | Entity lifecycle review (G2): пустой match key → каждый импорт = новое событие | До batch-прогона (Sprint 4) |
 | **B4** | 🟡 | Миграция: `short_title` (varchar 100) в `organizations` | Phase A report: поле принимается, но не сохраняется | Sprint 2 |
 | **B5** | 🟡 | Конвертация `vk_group_url` → `vk_group_id` при импорте | Phase A report: в БД integer, из пайплайна приходит URL | Sprint 2-3 |
-| **B6** | 🟡 | Auth middleware на internal API | Entity lifecycle review (G9): нет авторизации на `/api/internal/*` | Sprint 4 |
+| **B6** | ~~🟡~~ | ~~Auth middleware на internal API~~ | **Done.** Static Bearer Token: `AuthenticateInternalApi` middleware, `config/internal.php`, alias `auth.internal`. См. `backend/docs/internal_api_authentication.md` | Sprint 2 |
 | **B7** | 🟡 | `GET /api/internal/organizers?source_id=X&source_item_id=Y` для lookup | Entity lifecycle review (G4): Harvester не может определить existing_entity_id | Sprint 2-3 |
 | **B8** | 🟢 | Таблица `suggested_taxonomy_items` для модерации предложений от ИИ | Phase A report: suggested_taxonomy принимается, но не сохраняется | Sprint 3-4 |
 | **B9** | 🟢 | Dadata при импорте: вызывать `VenueAddressEnricher` в `processVenues()` автоматически | Entity lifecycle review (G7): fias_id остаётся NULL до ручного обогащения | Sprint 3-4 |
 | **B10** | 🟢 | Staging-таблицы для diff-анализа | Entity lifecycle review (G11): описаны в архитектуре, не реализованы | Phase 2 |
+| **B11** | 🟡 | ImportController: принимать и сохранять `fias_level`, `city_fias_id`, `region_iso`, `region_code` в venues | Sprint 2: Harvester вычисляет эти поля, но ImportController их игнорирует → artisan всё равно нужен | Sprint 3 |
+| **B12** | 🟢 | Консолидация Dadata: после B11 пересмотреть необходимость PHP `VenueAddressEnricher` для новых данных | Sprint 2: Python-клиент воспроизводит всю логику PHP; после B11 повторное обогащение artisan не нужно для новых импортов. PHP Dadata остаётся для: (1) legacy venues из WP-миграции, (2) reverse geocoding, (3) organizations:enrich-from-dadata. Удалять не нужно, но можно отключить artisan для вновь импортированных venues | После B11 (Sprint 4+) |
 
 ### 11.3. Обновлённые оценки ресурсов
 
-По результатам Sprint 1.10:
+По результатам Sprint 3.6 (batch-тест 50 URL, multi-page crawl):
 
-| Ресурс | Прогноз (из §7) | Факт / уточнение |
-|--------|-----------------|-------------------|
-| DeepSeek API | $8–15 за 5 000 URL | **~$2.75** (при 75%+ cache hit, $0.0006/URL) |
-| Время на 1 URL | не оценивалось | **~20s** (crawl 4s + LLM 16s) |
-| Экстраполяция на 5 000 | — | ~28 часов последовательно; ~5 часов при 6 параллельных воркерах |
+| Ресурс | Прогноз (из §7) | Sprint 1.10 (5 URL) | Sprint 3.6 (50 URL) |
+|--------|-----------------|---------------------|---------------------|
+| DeepSeek API | $8–15 за 5 000 URL | ~$2.75 ($0.0006/URL) | **$2.51** ($0.0005/URL) |
+| Cache hit rate | >90% | 75%+ | **100%** (batch mode) |
+| Время на 1 URL | — | ~20s (single page) | **49s** (multi-page, 5 pages) |
+| Crawl time | — | ~4s | **31s** (multi-page, avg 5 pages) |
+| Classify time | — | ~16s | **17s** |
+| Batch 50 URL (concurrency=2) | — | — | **19 мин** |
+| Экстраполяция на 5 000 | ~28 ч | ~5 ч (6 workers) | **~8 ч** (6 workers, multi-page) |
+| Success rate | — | 80% (4/5) | **90%** (45/50) |
 
 ---
 

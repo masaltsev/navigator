@@ -1,0 +1,46 @@
+{
+  "name": "socinfo",
+  "description": "Template for *.socinfo.ru EISRF platform (KCSON, CSO, social services). NOTE: Crawl4AI cleaned_html strips class/id attributes, so selectors rely on tag structure + comments. For production use, prefer the markdown-based SocinfoExtractor in strategies/site_extractors/socinfo.py.",
+  "platform_marker": "socinfo.ru",
+  "url_pattern": "*.socinfo.ru",
+  "baseSelector": "body",
+  "fields": [
+    {
+      "name": "page_title",
+      "selector": "title",
+      "type": "text"
+    },
+    {
+      "name": "org_name_line1",
+      "selector": "body > div:nth-child(2) > div > div:nth-child(2) > p:first-child",
+      "type": "text"
+    },
+    {
+      "name": "org_name_line2",
+      "selector": "body > div:nth-child(2) > div > div:nth-child(2) > p:nth-child(2)",
+      "type": "text"
+    },
+    {
+      "name": "address_section",
+      "selector": "h2:contains('Адрес') ~ div",
+      "type": "text",
+      "multiple": true
+    },
+    {
+      "name": "main_content",
+      "selector": "h1 ~ p",
+      "type": "text",
+      "multiple": true
+    },
+    {
+      "name": "footer_copyright",
+      "selector": "body > div:last-child p:first-child",
+      "type": "text"
+    }
+  ],
+  "_notes": {
+    "limitations": "CSS selectors are fragile without class attributes. Use SocinfoExtractor for reliable extraction.",
+    "validated_on": "irkcson.aln.socinfo.ru cleaned_html (Sprint 3.6)",
+    "created": "2026-02-24"
+  }
+}

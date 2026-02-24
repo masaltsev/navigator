@@ -1,0 +1,1741 @@
+{
+  "summary": {
+    "total": 50,
+    "success": 45,
+    "errors": 5,
+    "accepted": 25,
+    "rejected": 14,
+    "needs_review": 6,
+    "works_with_elderly": 31,
+    "avg_confidence": 0.719,
+    "total_time_s": 1149.2,
+    "avg_time_per_url_s": 23.0,
+    "error_urls": [
+      "https://kcson23.uszn032.ru",
+      "https://fond-tut.ru",
+      "http://civil-society.donland.ru",
+      "https://kcson27.uszn032.ru",
+      "https://mikh-kcson.ryazan."
+    ]
+  },
+  "results": [
+    {
+      "url": "https://eparhia10.ru/eparhija/",
+      "status": "success",
+      "title": "Религиозная организация «Петрозаводская и Карельская Епархия Русской Православной Церкви (Московский Патриархат)»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 1,
+      "org_types": [
+        "69"
+      ],
+      "ownership_type": null,
+      "core_status": null,
+      "timing": {
+        "crawl_s": 12.6,
+        "classify_s": 17.5,
+        "enrich_s": 0.1,
+        "total_s": 30.3
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 23905,
+        "total_output_tokens": 710,
+        "estimated_cost_usd": 0.0005334700000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://eparhia10.ru/eparhija/",
+        "https://eparhia10.ru/eparhija/kontakty",
+        "https://eparhia10.ru/eparhija/contacts",
+        "https://eparhia10.ru/eparhija/rekvizity",
+        "https://eparhia10.ru/eparhija/requisites"
+      ]
+    },
+    {
+      "url": "https://labinsk-kcson.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение социального обслуживания Краснодарского края «Лабинский комплексный центр социального обслуживания населения»",
+      "decision": "accepted",
+      "confidence": 0.96,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 7,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 32.1,
+        "classify_s": 18.9,
+        "enrich_s": 0.1,
+        "total_s": 51.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21910,
+        "total_output_tokens": 777,
+        "estimated_cost_usd": 0.0005243
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://labinsk-kcson.ru",
+        "https://labinsk-kcson.ru/kontakty",
+        "https://labinsk-kcson.ru/contacts",
+        "https://labinsk-kcson.ru/rekvizity",
+        "https://labinsk-kcson.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://kcson-kr.adg.socinfo.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение Республики Адыгея «Красногвардейский комплексный центр социального обслуживания населения»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 9,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.8,
+        "classify_s": 18.2,
+        "enrich_s": 0.1,
+        "total_s": 49.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21127,
+        "total_output_tokens": 784,
+        "estimated_cost_usd": 0.000515298
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kcson-kr.adg.socinfo.ru",
+        "https://kcson-kr.adg.socinfo.ru/kontakty",
+        "https://kcson-kr.adg.socinfo.ru/contacts",
+        "https://kcson-kr.adg.socinfo.ru/rekvizity",
+        "https://kcson-kr.adg.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://kcson23.uszn032.ru",
+      "status": "error",
+      "error": "crawl_failed",
+      "elapsed_s": 1.3
+    },
+    {
+      "url": "https://ekbmiloserdie.ru",
+      "status": "success",
+      "title": "Православная Служба Милосердия в Екатеринбурге",
+      "decision": "needs_review",
+      "confidence": 0.82,
+      "works_with_elderly": true,
+      "venues_count": 2,
+      "venues_geocoded": 2,
+      "services_count": 3,
+      "org_types": [],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 29.6,
+        "classify_s": 17.6,
+        "enrich_s": 0.1,
+        "total_s": 47.3
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 20388,
+        "total_output_tokens": 761,
+        "estimated_cost_usd": 0.000498512
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://ekbmiloserdie.ru",
+        "https://ekbmiloserdie.ru/kontakty",
+        "https://ekbmiloserdie.ru/contacts",
+        "https://ekbmiloserdie.ru/rekvizity",
+        "https://ekbmiloserdie.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://www.крымск-кцсон.рф",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение социального обслуживания Краснодарского края «Крымский комплексный центр социального обслуживания населения»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 5,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 27.8,
+        "classify_s": 17.2,
+        "enrich_s": 0.1,
+        "total_s": 45.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19245,
+        "total_output_tokens": 725,
+        "estimated_cost_usd": 0.00047243000000000003
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://www.крымск-кцсон.рф",
+        "https://www.крымск-кцсон.рф/kontakty",
+        "https://www.крымск-кцсон.рф/contacts",
+        "https://www.крымск-кцсон.рф/rekvizity",
+        "https://www.крымск-кцсон.рф/requisites"
+      ]
+    },
+    {
+      "url": "http://www.ano-new-life.ru",
+      "status": "success",
+      "title": "АНО \"НОВАЯ ЖИЗНЬ\"",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 4,
+      "org_types": [
+        "142"
+      ],
+      "ownership_type": "162",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 27.5,
+        "classify_s": 14.4,
+        "enrich_s": 0.0,
+        "total_s": 41.8
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 16688,
+        "total_output_tokens": 605,
+        "estimated_cost_usd": 0.000403032
+      },
+      "pages_attempted": 5,
+      "pages_success": 1,
+      "page_urls": [
+        "http://www.ano-new-life.ru"
+      ]
+    },
+    {
+      "url": "http://hmkcson.ru",
+      "status": "success",
+      "title": "Не добавлен на хостинг",
+      "decision": "rejected",
+      "confidence": 0.1,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 0,
+      "org_types": [],
+      "ownership_type": null,
+      "core_status": null,
+      "timing": {
+        "crawl_s": 11.1,
+        "classify_s": 10.2,
+        "enrich_s": 0.0,
+        "total_s": 21.3
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 16919,
+        "total_output_tokens": 393,
+        "estimated_cost_usd": 0.000346906
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://hmkcson.ru",
+        "http://hmkcson.ru/kontakty",
+        "http://hmkcson.ru/contacts",
+        "http://hmkcson.ru/rekvizity",
+        "http://hmkcson.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://bf-bitdobru.aln.socinfo.ru",
+      "status": "success",
+      "title": "Благотворительный фонд «Быть добру»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 3,
+      "org_types": [
+        "142"
+      ],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 37.1,
+        "classify_s": 18.3,
+        "enrich_s": 0.1,
+        "total_s": 55.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 24604,
+        "total_output_tokens": 731,
+        "estimated_cost_usd": 0.0005491360000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://bf-bitdobru.aln.socinfo.ru",
+        "http://bf-bitdobru.aln.socinfo.ru/kontakty",
+        "http://bf-bitdobru.aln.socinfo.ru/contacts",
+        "http://bf-bitdobru.aln.socinfo.ru/rekvizity",
+        "http://bf-bitdobru.aln.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://fond-tut.ru",
+      "status": "error",
+      "error": "crawl_failed",
+      "elapsed_s": 1.0
+    },
+    {
+      "url": "https://fond-soyuzniki.ru",
+      "status": "success",
+      "title": "Фонд развития местных сообществ Удмуртской Республики «СОЮЗНИКИ»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 2,
+      "venues_geocoded": 2,
+      "services_count": 2,
+      "org_types": [
+        "82"
+      ],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.2,
+        "classify_s": 19.7,
+        "enrich_s": 0.2,
+        "total_s": 50.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 22479,
+        "total_output_tokens": 753,
+        "estimated_cost_usd": 0.000525546
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://fond-soyuzniki.ru",
+        "https://fond-soyuzniki.ru/kontakty",
+        "https://fond-soyuzniki.ru/contacts",
+        "https://fond-soyuzniki.ru/rekvizity",
+        "https://fond-soyuzniki.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://skb50.ru",
+      "status": "success",
+      "title": "Федеральное государственное бюджетное учреждение здравоохранения «Клиническая больница №50 Федерального медико-биологического агентства»",
+      "decision": "needs_review",
+      "confidence": 0.78,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 2,
+      "org_types": [
+        "140"
+      ],
+      "ownership_type": "164",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 32.8,
+        "classify_s": 18.2,
+        "enrich_s": 0.1,
+        "total_s": 51.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 25272,
+        "total_output_tokens": 745,
+        "estimated_cost_usd": 0.000562408
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://skb50.ru",
+        "http://skb50.ru/kontakty",
+        "http://skb50.ru/contacts",
+        "http://skb50.ru/rekvizity",
+        "http://skb50.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://кцсон-старица.рф",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение «Комплексный центр социального обслуживания населения» Старицкого муниципального округа, Тверская область",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 8,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 28.9,
+        "classify_s": 19.8,
+        "enrich_s": 0.1,
+        "total_s": 48.8
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21914,
+        "total_output_tokens": 784,
+        "estimated_cost_usd": 0.000526316
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://кцсон-старица.рф",
+        "http://кцсон-старица.рф/kontakty",
+        "http://кцсон-старица.рф/contacts",
+        "http://кцсон-старица.рф/rekvizity",
+        "http://кцсон-старица.рф/requisites"
+      ]
+    },
+    {
+      "url": "http://civil-society.donland.ru",
+      "status": "error",
+      "error": "crawl_failed",
+      "elapsed_s": 30.8
+    },
+    {
+      "url": "https://csogpvi-osinniki.kmr.socinfo.ru/about",
+      "status": "success",
+      "title": "Муниципальное бюджетное учреждение \"Комплексный центр социального обслуживания населения\" Осинниковского городского округа",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 9,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "153",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 11.3,
+        "classify_s": 18.9,
+        "enrich_s": 0.2,
+        "total_s": 30.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 22257,
+        "total_output_tokens": 789,
+        "estimated_cost_usd": 0.000532518
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://csogpvi-osinniki.kmr.socinfo.ru/about",
+        "https://csogpvi-osinniki.kmr.socinfo.ru/about/kontakty",
+        "https://csogpvi-osinniki.kmr.socinfo.ru/about/contacts",
+        "https://csogpvi-osinniki.kmr.socinfo.ru/about/rekvizity",
+        "https://csogpvi-osinniki.kmr.socinfo.ru/about/requisites"
+      ]
+    },
+    {
+      "url": "http://kb33fmba.ru",
+      "status": "success",
+      "title": "Федеральное государственное бюджетное учреждение здравоохранения «Клиническая больница № 33 Федерального медико-биологического агентства»",
+      "decision": "needs_review",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 2,
+      "org_types": [
+        "140"
+      ],
+      "ownership_type": "164",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.2,
+        "classify_s": 16.5,
+        "enrich_s": 0.1,
+        "total_s": 46.7
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19224,
+        "total_output_tokens": 686,
+        "estimated_cost_usd": 0.000461216
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://kb33fmba.ru",
+        "http://kb33fmba.ru/kontakty",
+        "http://kb33fmba.ru/contacts",
+        "http://kb33fmba.ru/rekvizity",
+        "http://kb33fmba.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://добрососеди.рф/",
+      "status": "success",
+      "title": "Нижегородская региональная общественная организация поддержки социальных и творческих инициатив «Добрые соседи»",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 3,
+      "org_types": [
+        "82",
+        "141"
+      ],
+      "ownership_type": "165",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.2,
+        "classify_s": 15.8,
+        "enrich_s": 0.0,
+        "total_s": 46.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 20808,
+        "total_output_tokens": 686,
+        "estimated_cost_usd": 0.000483392
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://добрососеди.рф/",
+        "http://добрососеди.рф/kontakty",
+        "http://добрососеди.рф/contacts",
+        "http://добрососеди.рф/rekvizity",
+        "http://добрососеди.рф/requisites"
+      ]
+    },
+    {
+      "url": "http://charityhospital.ru",
+      "status": "success",
+      "title": "Автономная некоммерческая организация медико-социальной помощи «Благотворительная больница»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 4,
+      "org_types": [
+        "118"
+      ],
+      "ownership_type": "162",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 35.1,
+        "classify_s": 17.5,
+        "enrich_s": 0.1,
+        "total_s": 52.7
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 22901,
+        "total_output_tokens": 742,
+        "estimated_cost_usd": 0.0005283740000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://charityhospital.ru",
+        "http://charityhospital.ru/kontakty",
+        "http://charityhospital.ru/contacts",
+        "http://charityhospital.ru/rekvizity",
+        "http://charityhospital.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://kcson27.uszn032.ru",
+      "status": "error",
+      "error": "crawl_failed",
+      "elapsed_s": 1.0
+    },
+    {
+      "url": "https://kcso-alagir.aln.socinfo.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение «Комплексный центр социального обслуживания населения Алагирского района»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 6,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 29.8,
+        "classify_s": 16.0,
+        "enrich_s": 0.1,
+        "total_s": 45.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21298,
+        "total_output_tokens": 678,
+        "estimated_cost_usd": 0.000488012
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kcso-alagir.aln.socinfo.ru",
+        "https://kcso-alagir.aln.socinfo.ru/kontakty",
+        "https://kcso-alagir.aln.socinfo.ru/contacts",
+        "https://kcso-alagir.aln.socinfo.ru/rekvizity",
+        "https://kcso-alagir.aln.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://anoujuor.tilda.ws/kinoinstallyasia",
+      "status": "success",
+      "title": "АВТОНОМНАЯ НЕКОММЕРЧЕСКАЯ ОРГАНИЗАЦИЯ ПО ПОДДЕРЖКИ СОЦИАЛЬНО-ТВОРЧЕСКИХ НАЧИНАНИЙ МОЛОДЕЖИ \"УДЬУОР\" (НАСЛЕДИЕ)",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 2,
+      "org_types": [
+        "82"
+      ],
+      "ownership_type": "162",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 26.8,
+        "classify_s": 17.9,
+        "enrich_s": 0.0,
+        "total_s": 44.7
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19082,
+        "total_output_tokens": 756,
+        "estimated_cost_usd": 0.00047882800000000004
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://anoujuor.tilda.ws/kinoinstallyasia",
+        "https://anoujuor.tilda.ws/kinoinstallyasia/kontakty",
+        "https://anoujuor.tilda.ws/kinoinstallyasia/contacts",
+        "https://anoujuor.tilda.ws/kinoinstallyasia/rekvizity",
+        "https://anoujuor.tilda.ws/kinoinstallyasia/requisites"
+      ]
+    },
+    {
+      "url": "https://kashira.blagochin.ru",
+      "status": "success",
+      "title": "Каширское благочиние",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 4,
+      "org_types": [
+        "69"
+      ],
+      "ownership_type": "156",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 34.9,
+        "classify_s": 21.3,
+        "enrich_s": 0.2,
+        "total_s": 56.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 25507,
+        "total_output_tokens": 872,
+        "estimated_cost_usd": 0.000601258
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kashira.blagochin.ru",
+        "https://kashira.blagochin.ru/kontakty",
+        "https://kashira.blagochin.ru/contacts",
+        "https://kashira.blagochin.ru/rekvizity",
+        "https://kashira.blagochin.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://mkb-05.ru",
+      "status": "success",
+      "title": "ФГБУЗ ЮОМЦ ФМБА России Махачкалинская клиническая больница",
+      "decision": "needs_review",
+      "confidence": 0.72,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 3,
+      "org_types": [
+        "103",
+        "140"
+      ],
+      "ownership_type": "164",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 42.9,
+        "classify_s": 19.0,
+        "enrich_s": 0.2,
+        "total_s": 62.0
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 24664,
+        "total_output_tokens": 748,
+        "estimated_cost_usd": 0.000554736
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://mkb-05.ru",
+        "https://mkb-05.ru/kontakty",
+        "https://mkb-05.ru/contacts",
+        "https://mkb-05.ru/rekvizity",
+        "https://mkb-05.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://волонтерыпобеды.рф",
+      "status": "success",
+      "title": "Всероссийское общественное движение «Волонтёры Победы»",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 4,
+      "org_types": [
+        "142"
+      ],
+      "ownership_type": "165",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 34.0,
+        "classify_s": 16.4,
+        "enrich_s": 0.0,
+        "total_s": 50.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 23911,
+        "total_output_tokens": 608,
+        "estimated_cost_usd": 0.000504994
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://волонтерыпобеды.рф",
+        "https://волонтерыпобеды.рф/kontakty",
+        "https://волонтерыпобеды.рф/contacts",
+        "https://волонтерыпобеды.рф/rekvizity",
+        "https://волонтерыпобеды.рф/requisites"
+      ]
+    },
+    {
+      "url": "https://irkcson.aln.socinfo.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение социального обслуживания Республики Северная Осетия – Алания «Комплексный центр социального обслуживания населения Иристонского района г. Владикавказ»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 6,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.0,
+        "classify_s": 17.2,
+        "enrich_s": 0.2,
+        "total_s": 47.3
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21597,
+        "total_output_tokens": 703,
+        "estimated_cost_usd": 0.0004991980000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://irkcson.aln.socinfo.ru",
+        "https://irkcson.aln.socinfo.ru/kontakty",
+        "https://irkcson.aln.socinfo.ru/contacts",
+        "https://irkcson.aln.socinfo.ru/rekvizity",
+        "https://irkcson.aln.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://волонтеры-медики.рф/",
+      "status": "success",
+      "title": "Всероссийское общественное движение «Волонтеры-медики»",
+      "decision": "needs_review",
+      "confidence": 0.82,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 6,
+      "org_types": [
+        "142"
+      ],
+      "ownership_type": "165",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 30.7,
+        "classify_s": 17.7,
+        "enrich_s": 0.0,
+        "total_s": 48.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 22438,
+        "total_output_tokens": 686,
+        "estimated_cost_usd": 0.000506212
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://волонтеры-медики.рф/",
+        "https://волонтеры-медики.рф/kontakty",
+        "https://волонтеры-медики.рф/contacts",
+        "https://волонтеры-медики.рф/rekvizity",
+        "https://волонтеры-медики.рф/requisites"
+      ]
+    },
+    {
+      "url": "https://csondolzh.orl.socinfo.ru",
+      "status": "success",
+      "title": "Бюджетное учреждение Орловской области Центр социального обслуживания населения Должанского района",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 11,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 31.2,
+        "classify_s": 19.8,
+        "enrich_s": 0.1,
+        "total_s": 51.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 27407,
+        "total_output_tokens": 808,
+        "estimated_cost_usd": 0.0006099380000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://csondolzh.orl.socinfo.ru",
+        "https://csondolzh.orl.socinfo.ru/kontakty",
+        "https://csondolzh.orl.socinfo.ru/contacts",
+        "https://csondolzh.orl.socinfo.ru/rekvizity",
+        "https://csondolzh.orl.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://кцсон-орел.рф",
+      "status": "success",
+      "title": "БУ ОО «Комплексный центр социального обслуживания населения Заводского района города Орла»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 9,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 31.9,
+        "classify_s": 17.6,
+        "enrich_s": 0.0,
+        "total_s": 49.5
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21943,
+        "total_output_tokens": 698,
+        "estimated_cost_usd": 0.0005026420000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://кцсон-орел.рф",
+        "https://кцсон-орел.рф/kontakty",
+        "https://кцсон-орел.рф/contacts",
+        "https://кцсон-орел.рф/rekvizity",
+        "https://кцсон-орел.рф/requisites"
+      ]
+    },
+    {
+      "url": "http://www.fond-obshee-delo.ru",
+      "status": "success",
+      "title": "Центр помощи студентам «СЕССИЮ СДАЛ!»",
+      "decision": "rejected",
+      "confidence": 0.1,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 0,
+      "org_types": [],
+      "ownership_type": "163",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 33.6,
+        "classify_s": 15.9,
+        "enrich_s": 0.0,
+        "total_s": 49.5
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 25032,
+        "total_output_tokens": 585,
+        "estimated_cost_usd": 0.000514248
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://www.fond-obshee-delo.ru",
+        "http://www.fond-obshee-delo.ru/kontakty",
+        "http://www.fond-obshee-delo.ru/contacts",
+        "http://www.fond-obshee-delo.ru/rekvizity",
+        "http://www.fond-obshee-delo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://lavkafond.ru",
+      "status": "success",
+      "title": "Благотворительный фонд поддержки социальных инициатив и помощи людям в трудной жизненной ситуации «Лавка радостей»",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 5,
+      "venues_geocoded": 5,
+      "services_count": 4,
+      "org_types": [
+        "82"
+      ],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 32.0,
+        "classify_s": 26.6,
+        "enrich_s": 0.3,
+        "total_s": 58.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 24647,
+        "total_output_tokens": 1111,
+        "estimated_cost_usd": 0.000656138
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://lavkafond.ru",
+        "https://lavkafond.ru/kontakty",
+        "https://lavkafond.ru/contacts",
+        "https://lavkafond.ru/rekvizity",
+        "https://lavkafond.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://xn--80adbokbfgde6a1bs.xn--p1ai",
+      "status": "success",
+      "title": "Школа социальной активности",
+      "decision": "accepted",
+      "confidence": 0.96,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 9,
+      "org_types": [
+        "141",
+        "142",
+        "82"
+      ],
+      "ownership_type": "165",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 40.0,
+        "classify_s": 16.8,
+        "enrich_s": 0.0,
+        "total_s": 56.8
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21311,
+        "total_output_tokens": 686,
+        "estimated_cost_usd": 0.0004904340000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://xn--80adbokbfgde6a1bs.xn--p1ai",
+        "http://xn--80adbokbfgde6a1bs.xn--p1ai/kontakty",
+        "http://xn--80adbokbfgde6a1bs.xn--p1ai/contacts",
+        "http://xn--80adbokbfgde6a1bs.xn--p1ai/rekvizity",
+        "http://xn--80adbokbfgde6a1bs.xn--p1ai/requisites"
+      ]
+    },
+    {
+      "url": "http://skcsonvita39.ru",
+      "status": "success",
+      "title": "Муниципальное бюджетное учреждение социального обслуживания \"Советский комплексный центр социального обслуживания населения \"Вита\"",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 4,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "153",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 32.3,
+        "classify_s": 16.4,
+        "enrich_s": 0.0,
+        "total_s": 48.7
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 24907,
+        "total_output_tokens": 632,
+        "estimated_cost_usd": 0.000525658
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://skcsonvita39.ru",
+        "http://skcsonvita39.ru/kontakty",
+        "http://skcsonvita39.ru/contacts",
+        "http://skcsonvita39.ru/rekvizity",
+        "http://skcsonvita39.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://prig-kcson.aln.socinfo.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение социального обслуживания Республики Северная Осетия – Алания «Комплексный центр социального обслуживания населения Пригородного района»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 0,
+      "services_count": 6,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 13.8,
+        "classify_s": 18.1,
+        "enrich_s": 0.2,
+        "total_s": 32.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21884,
+        "total_output_tokens": 752,
+        "estimated_cost_usd": 0.0005169360000000001
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://prig-kcson.aln.socinfo.ru",
+        "https://prig-kcson.aln.socinfo.ru/kontakty",
+        "https://prig-kcson.aln.socinfo.ru/contacts",
+        "https://prig-kcson.aln.socinfo.ru/rekvizity",
+        "https://prig-kcson.aln.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://nikola-sov.cerkov.ru",
+      "status": "success",
+      "title": "Храм святителя Николая, архиепископа Мир Ликийских, чудотворца, г.Советский ХМАО-Югра Тюменская обл.",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 2,
+      "org_types": [
+        "69"
+      ],
+      "ownership_type": "156",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 53.5,
+        "classify_s": 15.3,
+        "enrich_s": 0.0,
+        "total_s": 68.8
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21765,
+        "total_output_tokens": 629,
+        "estimated_cost_usd": 0.00048083
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://nikola-sov.cerkov.ru",
+        "http://nikola-sov.cerkov.ru/kontakty",
+        "http://nikola-sov.cerkov.ru/contacts",
+        "http://nikola-sov.cerkov.ru/rekvizity",
+        "http://nikola-sov.cerkov.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://kcsonvol.ru",
+      "status": "success",
+      "title": "ГКУСОН АО \"Комплексный центр социального обслуживания населения, Володарский район, Астраханская область\"",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 3,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "159",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 33.6,
+        "classify_s": 18.1,
+        "enrich_s": 0.1,
+        "total_s": 51.8
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21956,
+        "total_output_tokens": 640,
+        "estimated_cost_usd": 0.00048658400000000003
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://kcsonvol.ru",
+        "http://kcsonvol.ru/kontakty",
+        "http://kcsonvol.ru/contacts",
+        "http://kcsonvol.ru/rekvizity",
+        "http://kcsonvol.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://kickboxing-gym.ru",
+      "status": "success",
+      "title": "Федерация Кикбоксинга Амурской области",
+      "decision": "needs_review",
+      "confidence": 0.72,
+      "works_with_elderly": true,
+      "venues_count": 2,
+      "venues_geocoded": 0,
+      "services_count": 1,
+      "org_types": [
+        "92"
+      ],
+      "ownership_type": "163",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 33.4,
+        "classify_s": 17.8,
+        "enrich_s": 18.5,
+        "total_s": 69.6
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21943,
+        "total_output_tokens": 747,
+        "estimated_cost_usd": 0.000516362
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kickboxing-gym.ru",
+        "https://kickboxing-gym.ru/kontakty",
+        "https://kickboxing-gym.ru/contacts",
+        "https://kickboxing-gym.ru/rekvizity",
+        "https://kickboxing-gym.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://mikh-kcson.ryazan.",
+      "status": "error",
+      "error": "crawl_failed",
+      "elapsed_s": 1.8
+    },
+    {
+      "url": "https://cso-kaltan.kmr.socinfo.ru",
+      "status": "success",
+      "title": "Муниципальное казенное учреждение Калтанского городского округа Кемеровской области Центр социального обслуживания населения",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 9,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "167",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 13.4,
+        "classify_s": 18.9,
+        "enrich_s": 0.1,
+        "total_s": 32.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21824,
+        "total_output_tokens": 803,
+        "estimated_cost_usd": 0.000530376
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://cso-kaltan.kmr.socinfo.ru",
+        "https://cso-kaltan.kmr.socinfo.ru/kontakty",
+        "https://cso-kaltan.kmr.socinfo.ru/contacts",
+        "https://cso-kaltan.kmr.socinfo.ru/rekvizity",
+        "https://cso-kaltan.kmr.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://pokrov-fond.ru/about/",
+      "status": "success",
+      "title": "Социальный благотворительный Фонд «ПОКРОВ»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 2,
+      "org_types": [],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 36.9,
+        "classify_s": 18.0,
+        "enrich_s": 0.1,
+        "total_s": 55.0
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 25526,
+        "total_output_tokens": 643,
+        "estimated_cost_usd": 0.000537404
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://pokrov-fond.ru/about/",
+        "https://pokrov-fond.ru/about/kontakty",
+        "https://pokrov-fond.ru/about/contacts",
+        "https://pokrov-fond.ru/about/rekvizity",
+        "https://pokrov-fond.ru/about/requisites"
+      ]
+    },
+    {
+      "url": "https://kcson-bl.ucoz.net",
+      "status": "success",
+      "title": "АНО ЦСОН \"Благо\" Благовещенского района",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 3,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "162",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 29.4,
+        "classify_s": 14.6,
+        "enrich_s": 0.0,
+        "total_s": 44.1
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 18263,
+        "total_output_tokens": 606,
+        "estimated_cost_usd": 0.00042536200000000004
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kcson-bl.ucoz.net",
+        "https://kcson-bl.ucoz.net/kontakty",
+        "https://kcson-bl.ucoz.net/contacts",
+        "https://kcson-bl.ucoz.net/rekvizity",
+        "https://kcson-bl.ucoz.net/requisites"
+      ]
+    },
+    {
+      "url": "https://colsmk-1.ru",
+      "status": "success",
+      "title": "Частное профессиональное образовательное учреждение «Ставропольский медицинский колледж № 1»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 3,
+      "org_types": [],
+      "ownership_type": "163",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 26.5,
+        "classify_s": 16.7,
+        "enrich_s": 0.1,
+        "total_s": 43.3
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19925,
+        "total_output_tokens": 716,
+        "estimated_cost_usd": 0.00047943
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://colsmk-1.ru",
+        "https://colsmk-1.ru/kontakty",
+        "https://colsmk-1.ru/contacts",
+        "https://colsmk-1.ru/rekvizity",
+        "https://colsmk-1.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://nkofondpobeda.ru",
+      "status": "success",
+      "title": "НКО ФОНД \"ПОБЕДА\"",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 3,
+      "org_types": [],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 29.9,
+        "classify_s": 16.0,
+        "enrich_s": 0.1,
+        "total_s": 45.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 22058,
+        "total_output_tokens": 640,
+        "estimated_cost_usd": 0.000488012
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://nkofondpobeda.ru",
+        "https://nkofondpobeda.ru/kontakty",
+        "https://nkofondpobeda.ru/contacts",
+        "https://nkofondpobeda.ru/rekvizity",
+        "https://nkofondpobeda.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://aokb28.su",
+      "status": "success",
+      "title": "ГАУЗ АО «Амурская областная клиническая больница»",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 5,
+      "org_types": [
+        "140"
+      ],
+      "ownership_type": "152",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 32.6,
+        "classify_s": 18.5,
+        "enrich_s": 0.0,
+        "total_s": 51.0
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 20882,
+        "total_output_tokens": 755,
+        "estimated_cost_usd": 0.000503748
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://aokb28.su",
+        "https://aokb28.su/kontakty",
+        "https://aokb28.su/contacts",
+        "https://aokb28.su/rekvizity",
+        "https://aokb28.su/requisites"
+      ]
+    },
+    {
+      "url": "http://kcsonesso.ru",
+      "status": "success",
+      "title": "kcsonesso.ru",
+      "decision": "rejected",
+      "confidence": 0.1,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 0,
+      "org_types": [],
+      "ownership_type": null,
+      "core_status": null,
+      "timing": {
+        "crawl_s": 31.2,
+        "classify_s": 14.7,
+        "enrich_s": 0.0,
+        "total_s": 45.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 16070,
+        "total_output_tokens": 581,
+        "estimated_cost_usd": 0.00038766000000000007
+      },
+      "pages_attempted": 5,
+      "pages_success": 1,
+      "page_urls": [
+        "http://kcsonesso.ru"
+      ]
+    },
+    {
+      "url": "http://volonter71.ru",
+      "status": "success",
+      "title": "volonter71.ru",
+      "decision": "rejected",
+      "confidence": 0.1,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 0,
+      "org_types": [],
+      "ownership_type": "158",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 27.3,
+        "classify_s": 13.5,
+        "enrich_s": 0.0,
+        "total_s": 40.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 18795,
+        "total_output_tokens": 532,
+        "estimated_cost_usd": 0.00041209
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://volonter71.ru",
+        "http://volonter71.ru/kontakty",
+        "http://volonter71.ru/contacts",
+        "http://volonter71.ru/rekvizity",
+        "http://volonter71.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://kcson.stv.socinfo.ru",
+      "status": "success",
+      "title": "Государственное бюджетное учреждение социального обслуживания \"Курский центр социального обслуживания населения\"",
+      "decision": "accepted",
+      "confidence": 0.9,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 7,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 26.2,
+        "classify_s": 17.1,
+        "enrich_s": 0.1,
+        "total_s": 43.4
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 21300,
+        "total_output_tokens": 721,
+        "estimated_cost_usd": 0.00050008
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://kcson.stv.socinfo.ru",
+        "https://kcson.stv.socinfo.ru/kontakty",
+        "https://kcson.stv.socinfo.ru/contacts",
+        "https://kcson.stv.socinfo.ru/rekvizity",
+        "https://kcson.stv.socinfo.ru/requisites"
+      ]
+    },
+    {
+      "url": "http://kgbu-kcson.ru",
+      "status": "success",
+      "title": "Краевое государственное бюджетное учреждение социального обслуживания «Комплексный центр социального обслуживания населения «Краснотуранский»",
+      "decision": "accepted",
+      "confidence": 0.93,
+      "works_with_elderly": true,
+      "venues_count": 1,
+      "venues_geocoded": 1,
+      "services_count": 5,
+      "org_types": [
+        "144"
+      ],
+      "ownership_type": "154",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 36.6,
+        "classify_s": 19.8,
+        "enrich_s": 0.1,
+        "total_s": 56.5
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 25268,
+        "total_output_tokens": 789,
+        "estimated_cost_usd": 0.000574672
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "http://kgbu-kcson.ru",
+        "http://kgbu-kcson.ru/kontakty",
+        "http://kgbu-kcson.ru/contacts",
+        "http://kgbu-kcson.ru/rekvizity",
+        "http://kgbu-kcson.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://turizmtambov.ru/about",
+      "status": "success",
+      "title": "Ассоциация развития туризма Тамбовской области",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 2,
+      "venues_geocoded": 2,
+      "services_count": 3,
+      "org_types": [
+        "69"
+      ],
+      "ownership_type": "162",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 33.3,
+        "classify_s": 16.7,
+        "enrich_s": 0.2,
+        "total_s": 50.2
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19301,
+        "total_output_tokens": 677,
+        "estimated_cost_usd": 0.00045977400000000003
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://turizmtambov.ru/about",
+        "https://turizmtambov.ru/about/kontakty",
+        "https://turizmtambov.ru/about/contacts",
+        "https://turizmtambov.ru/about/rekvizity",
+        "https://turizmtambov.ru/about/requisites"
+      ]
+    },
+    {
+      "url": "https://www.kb85.ru",
+      "status": "success",
+      "title": "КБ №85 ФМБА России",
+      "decision": "accepted",
+      "confidence": 0.88,
+      "works_with_elderly": true,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 5,
+      "org_types": [
+        "140"
+      ],
+      "ownership_type": "164",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 27.1,
+        "classify_s": 16.8,
+        "enrich_s": 0.0,
+        "total_s": 43.9
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 20937,
+        "total_output_tokens": 689,
+        "estimated_cost_usd": 0.00048603800000000005
+      },
+      "pages_attempted": 5,
+      "pages_success": 5,
+      "page_urls": [
+        "https://www.kb85.ru",
+        "https://www.kb85.ru/kontakty",
+        "https://www.kb85.ru/contacts",
+        "https://www.kb85.ru/rekvizity",
+        "https://www.kb85.ru/requisites"
+      ]
+    },
+    {
+      "url": "https://fondinsan.ru",
+      "status": "success",
+      "title": "Благотворительный фонд «Инсан»",
+      "decision": "rejected",
+      "confidence": 0.45,
+      "works_with_elderly": false,
+      "venues_count": 0,
+      "venues_geocoded": 0,
+      "services_count": 2,
+      "org_types": [
+        "142"
+      ],
+      "ownership_type": "161",
+      "core_status": null,
+      "timing": {
+        "crawl_s": 90.8,
+        "classify_s": 14.2,
+        "enrich_s": 0.0,
+        "total_s": 105.0
+      },
+      "llm_metrics": {
+        "total_calls": 1,
+        "cache_hit_rate": 1.0,
+        "total_input_tokens": 19659,
+        "total_output_tokens": 579,
+        "estimated_cost_usd": 0.000437346
+      },
+      "pages_attempted": 5,
+      "pages_success": 3,
+      "page_urls": [
+        "https://fondinsan.ru",
+        "https://fondinsan.ru/kontakty",
+        "https://fondinsan.ru/requisites"
+      ]
+    }
+  ]
+}

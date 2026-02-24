@@ -81,7 +81,8 @@ class ImportController extends Controller
             'contacts.emails' => 'nullable|array',
             'contacts.emails.*' => 'string|email',
             'short_title' => 'nullable|string|max:100',
-            'target_audience' => 'nullable|string|max:1000',
+            'target_audience' => 'nullable|array',
+            'target_audience.*' => 'string',
             'site_urls' => 'nullable|array',
             'site_urls.*' => 'string',
             'vk_group_url' => 'nullable|string|max:255',
@@ -330,9 +331,7 @@ class ImportController extends Controller
                 'ai_explanation' => $aiMetadata['ai_explanation'] ?? null,
                 'ai_source_trace' => $aiMetadata['ai_source_trace'] ?? null,
                 'site_urls' => $data['site_urls'] ?? null,
-                'target_audience' => isset($data['target_audience'])
-                    ? (is_array($data['target_audience']) ? $data['target_audience'] : [$data['target_audience']])
-                    : null,
+                'target_audience' => $data['target_audience'] ?? null,
                 'status' => $status,
             ]
         );

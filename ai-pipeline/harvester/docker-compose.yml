@@ -1,0 +1,50 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  harvester-worker:
+    build:
+      context: .
+      target: worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CRAWL4AI_HEADLESS=true
+    volumes:
+      - ./seeders_data:/app/seeders_data:ro
+    restart: unless-stopped
+
+  # One-off CLI container (run manually)
+  # docker compose run --rm harvester-cli https://example.com --to-core --multi-page --pretty
+  harvester-cli:
+    build:
+      context: .
+      target: cli
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CRAWL4AI_HEADLESS=true
+    volumes:
+      - ./seeders_data:/app/seeders_data:ro
+    profiles:
+      - cli
+
+volumes:
+  redis-data:
