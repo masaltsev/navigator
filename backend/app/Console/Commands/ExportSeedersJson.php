@@ -35,6 +35,8 @@ class ExportSeedersJson extends Command
                 'name' => $cat->name,
                 'is_active' => $cat->is_active,
                 'parent_code' => $cat->parent?->code,
+                'description' => $cat->description,
+                'keywords' => $cat->keywords,
             ]);
         $this->writeJson($outputDir, 'thematic_categories.json', $categories->all());
 
@@ -44,7 +46,7 @@ class ExportSeedersJson extends Command
 
         $ownership = OwnershipType::where('is_active', true)
             ->where('code', '!=', '151')
-            ->get(['id', 'code', 'name', 'is_active'])
+            ->get(['id', 'code', 'name', 'is_active', 'description', 'keywords'])
             ->map(fn ($m) => $m->toArray())
             ->all();
         $this->writeJson($outputDir, 'ownership_types.json', $ownership);
@@ -57,7 +59,7 @@ class ExportSeedersJson extends Command
     private function exportFlat(string $dir, string $filename, string $model): void
     {
         $data = $model::where('is_active', true)
-            ->get(['id', 'code', 'name', 'is_active'])
+            ->get(['id', 'code', 'name', 'is_active', 'description', 'keywords'])
             ->map(fn ($m) => $m->toArray())
             ->all();
         $this->writeJson($dir, $filename, $data);

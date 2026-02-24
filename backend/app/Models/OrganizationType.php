@@ -29,6 +29,7 @@ class OrganizationType extends Model
     {
         return [
             'is_active' => 'boolean',
+            'keywords' => 'array',
         ];
     }
 }

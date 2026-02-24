@@ -37,7 +37,8 @@
 
 **Цель:** обогащение уже заведённых в базу организаций по источникам типа `org_website` (официальные сайты в таблице `sources`). Harvester обходит сайты, извлекает структурированные данные и выравнивает их по реляционной модели Navigator Core через закрытые справочники.
 
-**Вне Phase 1:** агрегаторы (ФПГ, реестр СО НКО, Добро.рф) — Phase 2; полиморфные промпты по типу организации — отдельный workstream по AI_Pipeline_Navigator_Plan.
+**Вне Phase 1:** агрегаторы (ФПГ, реестр СО НКО, Добро.рф) — Phase 2.  
+**UPD:** полиморфные промпты реализованы досрочно (Sprint 1) — см. §10.
 
 **Критерии готовности Phase 1:**
 - CLI: один URL → Crawl4AI + DeepSeek → `RawOrganizationData` в JSON.
@@ -69,7 +70,7 @@
 
 - **Schema-Constrained Extraction:** только коды из сидеров; маппинг в Harvester делает `classifier.py`, не LLM.
 - **Staging / Diff / Immutability:** реализуются в Laravel при обработке `POST /api/internal/import/organizer`; Harvester только формирует payload.
-- **Полиморфные промпты:** в Phase 1 — один базовый промпт (stub); полиморфность — отдельный workstream по AI_Pipeline_Navigator_Plan.
+- **Полиморфные промпты:** ~~в Phase 1 — один базовый промпт (stub)~~ **UPD:** реализованы в Sprint 1 — `organization_prompt.py`, `event_prompt.py`, 3 паттерна (медицина / соцзащита / активное долголетие).
 
 ---
 
@@ -248,10 +249,112 @@ navigator/
 
 ---
 
-## 10. Для агента: старт сессии
+## 10. Прогресс и статус спринтов
+
+> Обновлено: 2026-02-24
+
+### Спринт 1 — ЗАВЕРШЁН
+
+| # | Задача | Статус | Заметки |
+|---|--------|--------|---------|
+| 1.1 | pyproject.toml, .env.example | **Done** | |
+| 1.2 | config/settings.py, llm_config.py | **Done** | |
+| 1.3 | ExportSeedersJson.php | **Done** | Экспорт 5 справочников с description/keywords |
+| 1.4 | config/seeders.py | **Done** | |
+| 1.5 | schemas/extraction.py, navigator_core.py | **Done** | |
+| 1.6 | strategy_router.py | **Done** | Legacy: через LLMExtractionStrategy. Целевой пайплайн — OrganizationProcessor |
+| 1.7 | regex_strategy.py | **Done** | |
+| 1.8 | base_system_prompt.py, prompt_registry.py | **Done** | Legacy промпт; новый — organization_prompt.py |
+| 1.9 | run_single_url.py CLI | **Done** | Переписан на новый пайплайн (Crawl4AI + OrganizationProcessor) |
+| 1.10 | Тест на 5 реальных URL | **Done** | Отчёт: `harvester/docs/reports/2026-02-24__sprint1-10-crawl-test.md` |
+
+**Сделано сверх плана Sprint 1:**
+
+| Что | Файлы/отчёты |
+|-----|-------------|
+| Расширение онтологии (6 категорий, 8 услуг, 4 типа орг., 4 специалиста) | `navigator_ontology_update.md`, 2 миграции, 5 сидеров обновлены |
+| Полиморфные промпты (было Phase 2) | `prompts/schemas.py`, `dictionaries.py`, `examples.py`, `organization_prompt.py`, `event_prompt.py` |
+| OrganizationProcessor + DeepSeekClient | `processors/organization_processor.py`, `deepseek_client.py`, `event_processor.py` |
+| 35 unit-тестов | `tests/test_schemas.py` (18), `tests/test_prompts.py` (17) |
+| Архитектурный аудит entity lifecycle | `harvester/docs/reports/2026-02-24__entity-lifecycle-review.md` |
+| Фаза A — контрактная совместимость ImportController | `backend/docs/reports/2026-02-24__import-controller-phase-a.md` |
+
+**Архитектурные решения:**
+- **Целевой пайплайн**: Crawl4AI (markdown only) → `OrganizationProcessor` → DeepSeek API (OpenAI SDK) → Pydantic `OrganizationOutput`. Legacy-пайплайн через `LLMExtractionStrategy` / LiteLLM — только для отладки краулинга (`--crawl-only`).
+- **Классификация LLM-first**: LLM возвращает коды справочников напрямую (не fuzzy match). Post-hoc валидация в `_validate_codes()` с автокоррекцией перепутанных справочников.
+- **Cache hit**: system prompt ~15K tokens кэшируется DeepSeek API (prefix caching). При batch ожидается >90% hit rate. Стоимость: ~$2.75 за 5 000 URL (в 3-5x дешевле прогноза).
+
+### Спринт 2 — ПРЕДСТОИТ
+
+**Что из Sprint 2 уже частично готово:**
+
+| # | Задача по плану | Факт | Остаток |
+|---|----------------|------|---------|
+| 2.1 | classifier.py | Логика в OrganizationProcessor + промптах (LLM классифицирует напрямую) | Отдельный classifier.py не нужен — пересмотреть |
+| 2.3 | confidence_scorer.py | AIConfidenceMetadata в schemas.py, decision routing в OrganizationProcessor | Пересмотреть — может быть не нужен |
+| 2.4 | payload_builder.py | `to_core_import_payload()` в organization_processor.py | Пересмотреть — может быть не нужен |
+
+**Что нужно сделать:**
+
+| # | Задача | Статус |
+|---|--------|--------|
+| 2.2 | `enrichment/dadata_client.py` — геокодирование | Не начато. Ключи Dadata в .env |
+| 2.5 | `core_client/api.py` — HTTP-клиент к Core | Не начато. Контракт Core API готов (ImportController обновлён) |
+| 2.6 | E2E: URL → payload → POST в Core | Не начато. Блокировался G5/G6/G8 — теперь решены |
+| 2.7 | Fixtures: HTML-снапшоты | Не начато |
+
+---
+
+## 11. Бэклог: отложенные задачи и TODO
+
+> Все задачи, выявленные в ходе разработки Sprint 1, тестирования и аудита.
+> Приоритет: 🔴 критический, 🟡 важный, 🟢 желательный.
+
+### 11.1. Python-пайплайн (ai-pipeline/harvester)
+
+| # | Приоритет | Задача | Источник | Когда |
+|---|-----------|--------|----------|-------|
+| **H1** | 🟡 | Multi-page стратегия: обход /kontakty, /o-nas, /uslugi, слияние markdown | Sprint 1.10 (P3, P7): адреса и email не извлекаются с подстраниц | Sprint 3 (3.1) |
+| **H2** | 🟡 | Title: на сайтах без явного юрлица на главной LLM перефразирует название | Sprint 1.10 (P4): neurology.ru → «Российский центр неврологии» вместо ФГБНУ | Sprint 3 (multi-page) |
+| **H3** | 🟡 | Firecrawl fallback для SPA-сайтов | Sprint 1.10 (P5): orateatr.com — Playwright не загружает SPA | Sprint 4 (4.5) |
+| **H4** | 🟢 | `suggested_taxonomy` пустой во всех тестах | Sprint 1.10 (P6): LLM не предлагает новые термины | Донастройка few-shot примеров |
+| **H5** | 🟢 | org_type_codes пустой для НКО/фондов | Sprint 1.10 ретест: после автокоррекции org_types = [] для «Образ жизни» | Добавить код НКО в org_types или few-shot пример |
+| **H6** | 🟢 | Переключить `prompt_registry.py` на новые промпты | Polymorphic prompts report: legacy registry ещё используется strategy_router | Когда legacy-пайплайн будет полностью заменён |
+| **H7** | 🟢 | Интеграционный тест с реальным DeepSeek на 3-5 URL через `OrganizationProcessor.process()` с оценкой cache hit rate | Polymorphic prompts report: рекомендация §7.1 | Sprint 2 (при E2E) |
+| **H8** | 🟢 | Расширить few-shot примеры: пример rejected-организации (детсад, фитнес без маркера 55+) | Polymorphic prompts report: рекомендация §7.5 | Sprint 2 или 3 |
+
+### 11.2. Backend / Core API (Laravel)
+
+| # | Приоритет | Задача | Источник | Когда |
+|---|-----------|--------|----------|-------|
+| **B1** | 🔴 | Миграция: `source_reference` (string, indexed) в `organizations`, `events` | Entity lifecycle review (G1, G2, G3): дедупликация без ИНН создаёт дубли | До batch-прогона (Sprint 4) |
+| **B2** | 🔴 | Дедупликация организаций: fallback ключ `source_reference` → `inn` → `title` | Entity lifecycle review (G1): `updateOrCreate(['inn' => null])` создаёт дубли | До batch-прогона (Sprint 4) |
+| **B3** | 🔴 | Дедупликация событий: `updateOrCreate` по `(organizer_id, source_reference)` | Entity lifecycle review (G2): пустой match key → каждый импорт = новое событие | До batch-прогона (Sprint 4) |
+| **B4** | 🟡 | Миграция: `short_title` (varchar 100) в `organizations` | Phase A report: поле принимается, но не сохраняется | Sprint 2 |
+| **B5** | 🟡 | Конвертация `vk_group_url` → `vk_group_id` при импорте | Phase A report: в БД integer, из пайплайна приходит URL | Sprint 2-3 |
+| **B6** | 🟡 | Auth middleware на internal API | Entity lifecycle review (G9): нет авторизации на `/api/internal/*` | Sprint 4 |
+| **B7** | 🟡 | `GET /api/internal/organizers?source_id=X&source_item_id=Y` для lookup | Entity lifecycle review (G4): Harvester не может определить existing_entity_id | Sprint 2-3 |
+| **B8** | 🟢 | Таблица `suggested_taxonomy_items` для модерации предложений от ИИ | Phase A report: suggested_taxonomy принимается, но не сохраняется | Sprint 3-4 |
+| **B9** | 🟢 | Dadata при импорте: вызывать `VenueAddressEnricher` в `processVenues()` автоматически | Entity lifecycle review (G7): fias_id остаётся NULL до ручного обогащения | Sprint 3-4 |
+| **B10** | 🟢 | Staging-таблицы для diff-анализа | Entity lifecycle review (G11): описаны в архитектуре, не реализованы | Phase 2 |
+
+### 11.3. Обновлённые оценки ресурсов
+
+По результатам Sprint 1.10:
+
+| Ресурс | Прогноз (из §7) | Факт / уточнение |
+|--------|-----------------|-------------------|
+| DeepSeek API | $8–15 за 5 000 URL | **~$2.75** (при 75%+ cache hit, $0.0006/URL) |
+| Время на 1 URL | не оценивалось | **~20s** (crawl 4s + LLM 16s) |
+| Экстраполяция на 5 000 | — | ~28 часов последовательно; ~5 часов при 6 параллельных воркерах |
+
+---
+
+## 12. Для агента: старт сессии
 
 В начале сессии проверяю:
-1. **Текущий спринт и задачу** — что уже есть в `ai-pipeline/harvester/` (по списку из раздела 4).
+1. **Текущий спринт и задачу** — смотрю §10 (прогресс) и §11 (бэклог).
 2. **Checkpoint** — был ли подтверждён предыдущий блок; если нет, сначала показываю результат и жду «ок» или правки.
 3. **Нужно от тебя** — из блока спринта: ключи, контракт API, список URL, решение по мокам/Redis и т.д. Если чего-то не хватает, спрашиваю или делаю разумные моки и помечаю в коде/README.
 4. **Спеки** — при неясностях смотрю Harvester_v1_Final Spec и Navigator_Core_Model_and_API; при расхождении предлагаю вариант и прошу утвердить.
+5. **Бэклог** — проверяю §11 на отложенные задачи, которые пора взять в работу.

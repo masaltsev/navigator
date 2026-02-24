@@ -55,6 +55,7 @@ class Service extends Model
     {
         return [
             'is_active' => 'boolean',
+            'keywords' => 'array',
         ];
     }
 }

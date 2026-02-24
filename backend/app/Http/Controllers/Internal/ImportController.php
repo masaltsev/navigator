@@ -62,7 +62,7 @@ class ImportController extends Controller
             'inn' => 'nullable|string|max:12',
             'ogrn' => 'nullable|string|max:15',
             'ai_metadata' => 'required|array',
-            'ai_metadata.decision' => 'required|string|in:accepted,rejected',
+            'ai_metadata.decision' => 'required|string|in:accepted,rejected,needs_review',
             'ai_metadata.ai_confidence_score' => 'required|numeric|min:0|max:1',
             'ai_metadata.works_with_elderly' => 'required|boolean',
             'ai_metadata.ai_explanation' => 'nullable|string',
@@ -75,11 +75,25 @@ class ImportController extends Controller
             'classification.thematic_category_codes' => 'nullable|array',
             'classification.specialist_profile_codes' => 'nullable|array',
             'classification.service_codes' => 'nullable|array',
+            'contacts' => 'nullable|array',
+            'contacts.phones' => 'nullable|array',
+            'contacts.phones.*' => 'string',
+            'contacts.emails' => 'nullable|array',
+            'contacts.emails.*' => 'string|email',
+            'short_title' => 'nullable|string|max:100',
+            'target_audience' => 'nullable|string|max:1000',
+            'site_urls' => 'nullable|array',
+            'site_urls.*' => 'string',
+            'vk_group_url' => 'nullable|string|max:255',
+            'ok_group_url' => 'nullable|string|max:255',
+            'telegram_url' => 'nullable|string|max:255',
+            'suggested_taxonomy' => 'nullable|array',
             'venues' => 'nullable|array',
             'venues.*.address_raw' => 'required|string',
             'venues.*.fias_id' => 'nullable|string',
-            'venues.*.geo_lat' => 'required|numeric',
-            'venues.*.geo_lon' => 'required|numeric',
+            'venues.*.geo_lat' => 'nullable|numeric',
+            'venues.*.geo_lon' => 'nullable|numeric',
+            'venues.*.address_comment' => 'nullable|string|max:500',
             'venues.*.is_headquarters' => 'nullable|boolean',
         ]);
 
@@ -105,7 +119,7 @@ class ImportController extends Controller
             };
 
             // Create or update organizer (polymorphic)
-            $organizer = $this->createOrUpdateOrganizer($entity, $aiMetadata, $status);
+            $organizer = $this->createOrUpdateOrganizer($entity, $data, $aiMetadata, $status);
 
             // Process venues
             if (! empty($data['venues'])) {
@@ -256,11 +270,17 @@ class ImportController extends Controller
      */
     private function determineStatus(array $aiMetadata): string
     {
-        if (($aiMetadata['decision'] ?? null) === 'rejected') {
+        $decision = $aiMetadata['decision'] ?? null;
+
+        if ($decision === 'rejected') {
             return 'rejected';
         }
 
-        if (($aiMetadata['decision'] ?? null) === 'accepted') {
+        if ($decision === 'needs_review') {
+            return 'pending_review';
+        }
+
+        if ($decision === 'accepted') {
             $confidence = $aiMetadata['ai_confidence_score'] ?? 0;
             $worksWithElderly = $aiMetadata['works_with_elderly'] ?? false;
 
@@ -268,10 +288,10 @@ class ImportController extends Controller
                 return 'approved'; // Smart Publish
             }
 
-            return 'pending_review'; // Needs manual review
+            return 'pending_review';
         }
 
-        return 'draft'; // Fallback
+        return 'draft';
     }
 
     /**
@@ -295,7 +315,7 @@ class ImportController extends Controller
 
         return Organization::updateOrCreate(
             [
-                // TODO: Use inn/ogrn or source_reference for uniqueness
+                // TODO: Use inn/ogrn or source_reference for uniqueness (Phase B)
                 'inn' => $data['inn'] ?? null,
             ],
             [
@@ -309,6 +329,10 @@ class ImportController extends Controller
                 'ai_confidence_score' => $aiMetadata['ai_confidence_score'],
                 'ai_explanation' => $aiMetadata['ai_explanation'] ?? null,
                 'ai_source_trace' => $aiMetadata['ai_source_trace'] ?? null,
+                'site_urls' => $data['site_urls'] ?? null,
+                'target_audience' => isset($data['target_audience'])
+                    ? (is_array($data['target_audience']) ? $data['target_audience'] : [$data['target_audience']])
+                    : null,
                 'status' => $status,
             ]
         );
@@ -358,17 +382,20 @@ class ImportController extends Controller
      */
     private function createOrUpdateOrganizer(
         $entity,
+        array $data,
         array $aiMetadata,
         string $status
     ): Organizer {
+        $contacts = $data['contacts'] ?? [];
+
         return Organizer::updateOrCreate(
             [
                 'organizable_type' => get_class($entity),
                 'organizable_id' => $entity->id,
             ],
             [
-                'contact_phones' => null, // TODO: Extract from ai_source_trace or separate field
-                'contact_emails' => null, // TODO: Extract from ai_source_trace or separate field
+                'contact_phones' => ! empty($contacts['phones']) ? $contacts['phones'] : null,
+                'contact_emails' => ! empty($contacts['emails']) ? $contacts['emails'] : null,
                 'status' => $status,
             ]
         );
@@ -380,15 +407,15 @@ class ImportController extends Controller
     private function processVenues(Organizer $organizer, array $venues, bool $isOrganization): void
     {
         foreach ($venues as $venueData) {
+            $matchKey = ! empty($venueData['fias_id'])
+                ? ['fias_id' => $venueData['fias_id']]
+                : ['address_raw' => $venueData['address_raw']];
+
             $venue = Venue::firstOrCreate(
-                [
-                    'fias_id' => $venueData['fias_id'] ?? null,
-                ],
+                $matchKey,
                 [
                     'address_raw' => $venueData['address_raw'],
-                    'kladr_id' => null, // TODO: Extract from Dadata if available
-                    'region_iso' => null, // TODO: Extract from Dadata if available
-                    // coordinates will be set via raw SQL (PostGIS)
+                    'fias_id' => $venueData['fias_id'] ?? null,
                 ]
             );
 
