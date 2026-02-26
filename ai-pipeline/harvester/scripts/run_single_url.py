@@ -27,8 +27,6 @@ Usage:
 import argparse
 import asyncio
 import json
-import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -42,13 +40,15 @@ if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)
 
+import structlog
+
+from config.logging import configure_logging
+from config.settings import get_settings
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-)
-logger = logging.getLogger("run_single_url")
+configure_logging()
+settings = get_settings()
+logger = structlog.get_logger("run_single_url")
 
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -59,9 +59,9 @@ _USER_AGENT = (
 async def crawl(url: str, save_raw_path: str | None = None) -> str:
     """Crawl URL, return markdown text (no LLM)."""
     browser_config = BrowserConfig(
-        headless=os.getenv("CRAWL4AI_HEADLESS", "true").lower() == "true",
+        headless=settings.crawl4ai_headless,
         enable_stealth=True,
-        user_agent=os.getenv("CRAWL4AI_USER_AGENT", _USER_AGENT),
+        user_agent=settings.crawl4ai_user_agent or _USER_AGENT,
     )
     run_config = CrawlerRunConfig(
         word_count_threshold=0,
@@ -100,8 +100,10 @@ def classify(url: str, markdown: str) -> tuple:
     from processors.organization_processor import OrganizationProcessor, to_core_import_payload
     from prompts.schemas import EntityType, HarvestInput
 
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
-    client = DeepSeekClient(api_key=api_key)
+    client = DeepSeekClient(
+        api_key=settings.deepseek_api_key,
+        model=settings.deepseek_model_name,
+    )
     processor = OrganizationProcessor(deepseek_client=client)
 
     harvest_input = HarvestInput(
@@ -124,10 +126,11 @@ async def enrich_venues(result) -> list:
     """Geocode venues via Dadata. Returns list of GeocodingResult."""
     from enrichment.dadata_client import DadataClient
 
-    api_key = os.getenv("DADATA_API_KEY", "")
-    secret_key = os.getenv("DADATA_SECRET_KEY", "")
-    use_clean = os.getenv("DADATA_USE_CLEAN", "false").lower() in ("true", "1", "yes")
-    dadata = DadataClient(api_key=api_key, secret_key=secret_key, use_clean=use_clean)
+    dadata = DadataClient(
+        api_key=settings.dadata_api_key,
+        secret_key=settings.dadata_secret_key,
+        use_clean=settings.dadata_use_clean,
+    )
 
     if not dadata.enabled:
         logger.warning("Dadata keys not set — skipping geocoding")
@@ -150,9 +153,10 @@ async def send_to_core(payload: dict) -> dict:
     """Send payload to Navigator Core API (or mock)."""
     from core_client.api import NavigatorCoreClient
 
-    base_url = os.getenv("CORE_API_URL", "")
-    api_token = os.getenv("CORE_API_TOKEN", "")
-    client = NavigatorCoreClient(base_url=base_url, api_token=api_token)
+    client = NavigatorCoreClient(
+        base_url=settings.core_api_url,
+        api_token=settings.core_api_token,
+    )
 
     response = await client.import_organizer(payload)
     logger.info(
@@ -162,6 +166,84 @@ async def send_to_core(payload: dict) -> dict:
         response.get("_mock", False),
     )
     return {**response, "_core_metrics": client.get_metrics()}
+
+
+async def run_event_harvest(url: str) -> dict:
+    """Discover and classify events from an organization's /news, /afisha pages."""
+    from processors.deepseek_client import DeepSeekClient
+    from processors.event_processor import EventProcessor, to_event_payload
+    from prompts.schemas import EntityType, HarvestInput
+    from strategies.event_discovery import EventDiscoverer
+
+    discoverer = EventDiscoverer(max_event_pages=3, max_events_per_page=10)
+    discovery = await discoverer.discover_events(url)
+
+    if not discovery.candidates:
+        return {
+            "url": url,
+            "status": "no_events",
+            "event_pages_found": discovery.event_pages_found,
+            "errors": discovery.errors,
+        }
+
+    client = DeepSeekClient(
+        api_key=settings.deepseek_api_key,
+        model=settings.deepseek_model_name,
+    )
+    processor = EventProcessor(deepseek_client=client)
+
+    events: list[dict] = []
+    for candidate in discovery.candidates:
+        try:
+            harvest_input = HarvestInput(
+                source_id="cli-event-harvest",
+                source_item_id=f"{url}#{candidate.title[:50]}",
+                entity_type=EntityType.EVENT,
+                raw_text=candidate.markdown[:15000],
+                source_url=candidate.url,
+                source_kind="org_website",
+            )
+            result = processor.process(harvest_input)
+            payload = to_event_payload(result)
+            payload["_discovery"] = {
+                "discovered_from": candidate.discovered_from,
+                "freshness_days": candidate.freshness_days,
+                "original_title": candidate.title,
+            }
+            events.append(payload)
+        except Exception as e:
+            events.append({
+                "error": str(e),
+                "candidate_title": candidate.title,
+                "candidate_url": candidate.url,
+            })
+
+    return {
+        "url": url,
+        "status": "success",
+        "event_pages_found": discovery.event_pages_found,
+        "candidates_found": len(discovery.candidates),
+        "events_classified": len([e for e in events if "error" not in e]),
+        "events": events,
+        "llm_metrics": client.get_metrics(),
+        "errors": discovery.errors,
+    }
+
+
+async def crawl_firecrawl(url: str) -> tuple[str, dict]:
+    """Crawl URL via Firecrawl Cloud API, return (markdown, meta)."""
+    from strategies.firecrawl_strategy import FirecrawlClient
+
+    client = FirecrawlClient()
+    if not client.enabled:
+        raise RuntimeError("FIRECRAWL_API_KEY not set")
+
+    result = await client.scrape(url)
+    if not result.success:
+        raise RuntimeError(f"Firecrawl failed: {result.error}")
+
+    meta = {"crawl_engine": "firecrawl", "pages_attempted": 1, "pages_success": 1}
+    return result.markdown, meta
 
 
 async def crawl_multi_page(url: str) -> tuple[str, dict]:
@@ -192,72 +274,106 @@ async def run(
     multi_page: bool = False,
     save_raw_path: str | None = None,
     site_extract: bool = False,
+    use_firecrawl: bool = False,
 ) -> dict:
-    """Full pipeline: crawl → [site-extract] → classify → [Dadata] → [Core API]."""
-    from processors.organization_processor import to_core_import_payload
+    """Full pipeline: crawl → [site-extract] → classify → [Dadata] → [Core API].
+
+    Uses harvest.run_organization_harvest when not use_firecrawl and not crawl_only.
+    """
     from strategies.site_extractors import SiteExtractorRegistry
 
-    crawl_meta = {}
-    try:
-        if multi_page:
-            markdown, crawl_meta = await crawl_multi_page(url)
-        else:
-            markdown = await crawl(url, save_raw_path=save_raw_path)
-    except Exception as e:
-        return {"error": f"Crawl failed: {e}", "url": url}
+    if use_firecrawl:
+        crawl_meta = {}
+        try:
+            markdown, crawl_meta = await crawl_firecrawl(url)
+        except Exception as e:
+            return {"error": f"Crawl failed: {e}", "url": url}
+        if not markdown.strip():
+            return {"error": "Empty markdown after crawl", "url": url}
+        site_data = SiteExtractorRegistry.extract_if_known(url, markdown)
+        if crawl_only:
+            return {"url": url, "status": "crawl_only", "markdown_length": len(markdown), "preview": markdown[:500], **crawl_meta, **({"site_extraction": site_data} if site_data else {})}
+        if site_extract and site_data:
+            return {"url": url, "status": "site_extract_only", "platform": site_data.get("platform"), "site_extraction": site_data, "markdown_length": len(markdown)}
+        try:
+            result, classify_elapsed, deepseek_client = classify(url, markdown)
+        except Exception as e:
+            return {"error": f"Classification failed: {e}", "url": url}
+        geo_results = None
+        if enrich_geo or to_core:
+            try:
+                geo_results = await enrich_venues(result) or None
+            except Exception as e:
+                logger.error("Dadata enrichment failed: %s", e)
+        from processors.organization_processor import to_core_import_payload
 
-    if not markdown.strip():
-        return {"error": "Empty markdown after crawl", "url": url}
-
-    site_data = SiteExtractorRegistry.extract_if_known(url, markdown)
+        payload = to_core_import_payload(result, geo_results=geo_results)
+        if site_data:
+            payload["_site_extraction"] = site_data
+        payload["_meta"] = {
+            "url": url, "multi_page": multi_page, "site_platform": site_data.get("platform") if site_data else None,
+            "elapsed_classify_s": round(classify_elapsed, 1), "ai_decision": result.ai_metadata.decision,
+            "ai_confidence": result.ai_metadata.ai_confidence_score, "works_with_elderly": result.ai_metadata.works_with_elderly,
+            "venues_geocoded": sum(1 for g in (geo_results or []) if g.fias_id), **crawl_meta, **deepseek_client.get_metrics(),
+        }
+        if to_core:
+            try:
+                payload["_core_response"] = await send_to_core(payload)
+            except Exception as e:
+                payload["_core_error"] = str(e)
+        return payload
 
     if crawl_only:
-        out: dict = {
-            "url": url,
-            "status": "crawl_only",
-            "markdown_length": len(markdown),
-            "preview": markdown[:500],
-            **crawl_meta,
-        }
-        if site_data:
-            out["site_extraction"] = site_data
-        return out
-
-    if site_extract and site_data:
-        return {
-            "url": url,
-            "status": "site_extract_only",
-            "platform": site_data.get("platform"),
-            "site_extraction": site_data,
-            "markdown_length": len(markdown),
-        }
-
-    try:
-        result, classify_elapsed, deepseek_client = classify(url, markdown)
-    except Exception as e:
-        return {"error": f"Classification failed: {e}", "url": url}
-
-    geo_results = None
-    if enrich_geo or to_core:
         try:
-            geo_results = await enrich_venues(result) or None
+            if multi_page:
+                markdown, crawl_meta = await crawl_multi_page(url)
+            else:
+                markdown = await crawl(url, save_raw_path=save_raw_path)
+                crawl_meta = {}
         except Exception as e:
-            logger.error("Dadata enrichment failed: %s", e)
+            return {"error": f"Crawl failed: {e}", "url": url}
+        if not markdown.strip():
+            return {"error": "Empty markdown after crawl", "url": url}
+        site_data = SiteExtractorRegistry.extract_if_known(url, markdown)
+        return {"url": url, "status": "crawl_only", "markdown_length": len(markdown), "preview": markdown[:500], **crawl_meta, **({"site_extraction": site_data} if site_data else {})}
 
-    payload = to_core_import_payload(result, geo_results=geo_results)
+    from harvest.run_organization_harvest import run_organization_harvest
+
+    out = await run_organization_harvest(
+        url,
+        source_id="cli-single-url",
+        source_item_id=url,
+        existing_entity_id=None,
+        multi_page=multi_page,
+        enrich_geo=enrich_geo or to_core,
+        additional_context="",
+        source_kind="org_website",
+        try_site_extractor=True,
+        deepseek_client=None,
+    )
+
+    if not out["success"]:
+        return {"error": out.get("error", "harvest failed"), "url": url}
+
+    result = out["result"]
+    payload = out["payload"]
+    crawl_meta = out["crawl_meta"]
+    geo_results = out.get("geo_results")
+    llm_metrics = out.get("llm_metrics", {})
+    site_data = out.get("site_extraction")
+
     if site_data:
         payload["_site_extraction"] = site_data
     payload["_meta"] = {
         "url": url,
         "multi_page": multi_page,
         "site_platform": site_data.get("platform") if site_data else None,
-        "elapsed_classify_s": round(classify_elapsed, 1),
         "ai_decision": result.ai_metadata.decision,
         "ai_confidence": result.ai_metadata.ai_confidence_score,
         "works_with_elderly": result.ai_metadata.works_with_elderly,
         "venues_geocoded": sum(1 for g in (geo_results or []) if g.fias_id),
         **crawl_meta,
-        **deepseek_client.get_metrics(),
+        **llm_metrics,
     }
 
     if to_core:
@@ -283,14 +399,16 @@ def main() -> int:
     parser.add_argument("--multi-page", action="store_true", help="Crawl main page + subpages (/kontakty, /o-nas, /uslugi)")
     parser.add_argument("--save-raw", metavar="DIR", help="Save raw markdown/HTML to DIR")
     parser.add_argument("--site-extract", action="store_true", help="Extract via site-specific template (0 tokens), skip LLM if platform known")
+    parser.add_argument("--firecrawl", action="store_true", help="Use Firecrawl Cloud instead of Crawl4AI (requires FIRECRAWL_API_KEY)")
+    parser.add_argument("--harvest-events", action="store_true", help="Discover and classify events from /news, /afisha pages")
     args = parser.parse_args()
 
     if args.check_env:
         checks = {
-            "DEEPSEEK_API_KEY": os.getenv("DEEPSEEK_API_KEY", ""),
-            "DADATA_API_KEY": os.getenv("DADATA_API_KEY", ""),
-            "CORE_API_URL": os.getenv("CORE_API_URL", ""),
-            "CORE_API_TOKEN": os.getenv("CORE_API_TOKEN", ""),
+            "DEEPSEEK_API_KEY": settings.deepseek_api_key,
+            "DADATA_API_KEY": settings.dadata_api_key,
+            "CORE_API_URL": settings.core_api_url,
+            "CORE_API_TOKEN": settings.core_api_token,
         }
         all_ok = True
         for name, val in checks.items():
@@ -304,15 +422,19 @@ def main() -> int:
     if not args.url:
         parser.error("url is required (unless using --check-env)")
 
-    out = asyncio.run(run(
-        args.url,
-        crawl_only=args.crawl_only,
-        enrich_geo=args.enrich_geo,
-        to_core=args.to_core,
-        multi_page=args.multi_page,
-        save_raw_path=args.save_raw,
-        site_extract=args.site_extract,
-    ))
+    if args.harvest_events:
+        out = asyncio.run(run_event_harvest(args.url))
+    else:
+        out = asyncio.run(run(
+            args.url,
+            crawl_only=args.crawl_only,
+            enrich_geo=args.enrich_geo,
+            to_core=args.to_core,
+            multi_page=args.multi_page,
+            save_raw_path=args.save_raw,
+            site_extract=args.site_extract,
+            use_firecrawl=args.firecrawl,
+        ))
     print(json.dumps(out, ensure_ascii=False, indent=2 if args.pretty else None))
     return 0 if "error" not in out else 1
 

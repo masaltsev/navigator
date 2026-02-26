@@ -1,0 +1,12 @@
+[
+  {"code": "lecture", "slug": "lecture", "name": "Лекция", "keywords": ["лекция", "доклад", "выступление", "презентация"], "is_active": true},
+  {"code": "workshop", "slug": "workshop", "name": "Мастер-класс / практикум", "keywords": ["мастер-класс", "практикум", "тренинг", "занятие"], "is_active": true},
+  {"code": "webinar", "slug": "webinar", "name": "Вебинар", "keywords": ["вебинар", "онлайн-встреча", "онлайн-семинар"], "is_active": true},
+  {"code": "consultation", "slug": "consultation", "name": "Консультация", "keywords": ["консультация", "приём", "вопрос-ответ"], "is_active": true},
+  {"code": "meeting", "slug": "meeting", "name": "Встреча / круглый стол", "keywords": ["встреча", "круглый стол", "обсуждение", "дискуссия"], "is_active": true},
+  {"code": "concert", "slug": "concert", "name": "Концерт", "keywords": ["концерт", "выступление", "концертная программа"], "is_active": true},
+  {"code": "exhibition", "slug": "exhibition", "name": "Выставка", "keywords": ["выставка", "экспозиция"], "is_active": true},
+  {"code": "course", "slug": "course", "name": "Курс / цикл занятий", "keywords": ["курс", "цикл", "программа занятий", "школа"], "is_active": true},
+  {"code": "holiday", "slug": "holiday", "name": "Праздник / акция", "keywords": ["праздник", "акция", "фестиваль", "день"], "is_active": true},
+  {"code": "other", "slug": "other", "name": "Другое", "keywords": ["мероприятие", "событие"], "is_active": true}
+]

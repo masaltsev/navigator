@@ -14,16 +14,17 @@ Usage:
 """
 
 import asyncio
-import logging
-import os
 import re
 from dataclasses import dataclass, field
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
+import structlog
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
 
-logger = logging.getLogger(__name__)
+from config.settings import get_settings
+
+logger = structlog.get_logger(__name__)
 
 SUBPAGE_PATTERNS: list[tuple[str, str]] = [
     ("/kontakty", "Контакты"),
@@ -89,6 +90,9 @@ class MultiPageCrawler:
       2. Scan main page markdown for internal links matching patterns
       3. Crawl up to max_subpages additional pages
 
+    Fallback: if Crawl4AI fails for the main page and Firecrawl is configured,
+    retries via Firecrawl Cloud API (for SPA/Cloudflare-protected sites).
+
     Merge strategy: sections separated by headers with page labels,
     keeping main page content first.
     """
@@ -99,11 +103,14 @@ class MultiPageCrawler:
         subpage_timeout_ms: int = DEFAULT_SUBPAGE_TIMEOUT,
         crawl_delay: float = DEFAULT_CRAWL_DELAY,
         headless: bool = True,
+        firecrawl_fallback: bool = True,
     ):
         self.max_subpages = max_subpages
         self.subpage_timeout_ms = subpage_timeout_ms
         self.crawl_delay = crawl_delay
         self.headless = headless
+        self.firecrawl_fallback = firecrawl_fallback
+        self._firecrawl_used = False
 
     async def crawl_organization(self, base_url: str) -> MultiPageResult:
         """
@@ -116,7 +123,7 @@ class MultiPageCrawler:
         browser_config = BrowserConfig(
             headless=self.headless,
             enable_stealth=True,
-            user_agent=os.getenv("CRAWL4AI_USER_AGENT", _USER_AGENT),
+            user_agent=get_settings().crawl4ai_user_agent or _USER_AGENT,
         )
 
         main_config = CrawlerRunConfig(
@@ -149,9 +156,29 @@ class MultiPageCrawler:
             if main_page.success:
                 result.total_pages_success += 1
             else:
-                logger.error("Main page crawl failed for %s: %s", base_url, main_page.error)
-                result.merged_markdown = ""
-                return result
+                logger.warning(
+                    "crawl4ai_main_failed",
+                    url=base_url,
+                    error=main_page.error,
+                )
+
+                if self.firecrawl_fallback:
+                    fc_page = await self._try_firecrawl_fallback(base_url)
+                    if fc_page and fc_page.success:
+                        result.pages[0] = fc_page
+                        result.total_pages_success += 1
+                        self._firecrawl_used = True
+                        logger.info(
+                            "firecrawl_fallback_success",
+                            url=base_url,
+                            markdown_len=len(fc_page.markdown),
+                        )
+                    else:
+                        result.merged_markdown = ""
+                        return result
+                else:
+                    result.merged_markdown = ""
+                    return result
 
             subpage_urls = self._discover_subpages(
                 base_url, main_page.markdown,
@@ -213,6 +240,35 @@ class MultiPageCrawler:
                 url=url, label=label, markdown="",
                 success=False, error=str(e),
             )
+
+    async def _try_firecrawl_fallback(self, url: str) -> Optional[PageResult]:
+        """Attempt to scrape via Firecrawl Cloud when Crawl4AI fails."""
+        try:
+            from strategies.firecrawl_strategy import FirecrawlClient
+
+            client = FirecrawlClient()
+            if not client.enabled:
+                logger.debug("firecrawl_not_configured")
+                return None
+
+            fc_result = await client.scrape(url)
+            if fc_result.success and fc_result.markdown.strip():
+                return PageResult(
+                    url=url,
+                    label="Главная страница (Firecrawl)",
+                    markdown=fc_result.markdown,
+                    success=True,
+                )
+            return PageResult(
+                url=url,
+                label="Главная страница (Firecrawl)",
+                markdown="",
+                success=False,
+                error=fc_result.error or "Empty Firecrawl result",
+            )
+        except Exception as e:
+            logger.warning("firecrawl_fallback_error", url=url, error=str(e))
+            return None
 
     def _discover_subpages(
         self,

@@ -42,4 +42,9 @@ return [
         'clean_base_url' => env('DADATA_CLEAN_BASE_URL', 'https://cleaner.dadata.ru/api/v1'),
     ],
 
+    'harvester' => [
+        'url' => env('HARVESTER_URL', 'http://localhost:8100'),
+        'api_token' => env('HARVESTER_API_TOKEN'),
+    ],
+
 ];

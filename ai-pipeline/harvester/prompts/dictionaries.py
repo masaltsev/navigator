@@ -19,6 +19,7 @@ DICTIONARY_LOAD_ORDER = [
     "services",
     "specialist_profiles",
     "ownership_types",
+    "event_categories",
 ]
 
 
@@ -28,6 +29,9 @@ def load_all_dictionaries() -> dict[str, list[dict]]:
     result: dict[str, list[dict]] = {}
     for name in DICTIONARY_LOAD_ORDER:
         file_path = SEEDERS_DIR / f"{name}.json"
+        if not file_path.exists():
+            result[name] = []
+            continue
         with open(file_path, encoding="utf-8") as f:
             raw = json.load(f)
         result[name] = [item for item in raw if item.get("is_active", True)]
@@ -68,6 +72,14 @@ def format_dictionary_for_prompt(name: str, items: list[dict]) -> str:
                         f"| {child.get('description', '')} "
                         f"| keywords: [{ckw}]"
                     )
+    elif name == "event_categories":
+        for item in sorted(items, key=lambda x: str(x.get("code", ""))):
+            kw = ", ".join(item.get("keywords", []))
+            code = item.get("code") or item.get("slug", "")
+            lines.append(
+                f"- код \"{code}\": {item['name']} "
+                f"| keywords: [{kw}]"
+            )
     else:
         for item in sorted(items, key=lambda x: int(x["code"])):
             kw = ", ".join(item.get("keywords", []))

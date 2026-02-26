@@ -13,13 +13,14 @@ This is more robust than CSS selectors for our pipeline because:
 
 from __future__ import annotations
 
-import logging
 from typing import Optional
 from urllib.parse import urlparse
 
+import structlog
+
 from strategies.site_extractors.socinfo import SocinfoExtractor
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 _EXTRACTORS: dict[str, type] = {

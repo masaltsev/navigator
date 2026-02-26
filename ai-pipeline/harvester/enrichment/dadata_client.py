@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 import httpx
+import structlog
 from tenacity import (
     before_sleep_log,
     retry,
@@ -34,11 +35,13 @@ from tenacity import (
     wait_exponential,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+_stdlib_logger = logging.getLogger(__name__)
 
 DADATA_CLEAN_URL = "https://cleaner.dadata.ru/api/v1/clean/address"
 DADATA_SUGGEST_URL = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address"
 DADATA_FIND_PARTY_URL = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
+DADATA_SUGGEST_PARTY_URL = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
 
 FEDERAL_CITY_ISOS = frozenset({"RU-MOW", "RU-SPE", "RU-SEV"})
 
@@ -78,18 +81,47 @@ class GeocodingResult:
 
 @dataclass
 class PartyResult:
-    """Result from Dadata findById/party (organization lookup by INN/OGRN)."""
+    """Result from Dadata findById/party or suggest/party."""
 
     found: bool = False
     inn: Optional[str] = None
     ogrn: Optional[str] = None
+    kpp: Optional[str] = None
     name_full: Optional[str] = None
     name_short: Optional[str] = None
+    opf: Optional[str] = None
+    okved: Optional[str] = None
+    director_name: Optional[str] = None
+    director_post: Optional[str] = None
     address: Optional[str] = None
+    address_unrestricted: Optional[str] = None
+    city_fias_id: Optional[str] = None
+    region_fias_id: Optional[str] = None
+    region_iso: Optional[str] = None
+    geo_lat: Optional[float] = None
+    geo_lon: Optional[float] = None
     phones: list[str] = field(default_factory=list)
     emails: list[str] = field(default_factory=list)
     status: Optional[str] = None
     raw_data: Optional[dict] = None
+
+    def to_geocoding_result(self) -> "GeocodingResult":
+        """Convert address portion to GeocodingResult (avoids a separate geocode call)."""
+        addr_data = (self.raw_data or {}).get("address", {}).get("data", {})
+        if not addr_data:
+            return GeocodingResult(address_raw=self.address or "")
+        return GeocodingResult(
+            address_raw=self.address or "",
+            address_normalized=self.address_unrestricted,
+            fias_id=_pick_settlement_or_city_fias_id(addr_data),
+            fias_level=_pick_fias_level(addr_data),
+            city_fias_id=_str_or_none(addr_data.get("city_fias_id")),
+            kladr_id=_pick_kladr_id(addr_data),
+            region_iso=_str_or_none(addr_data.get("region_iso_code")),
+            region_code=_pick_region_code(addr_data),
+            geo_lat=_safe_float(addr_data.get("geo_lat")),
+            geo_lon=_safe_float(addr_data.get("geo_lon")),
+        )
 
 
 class DadataClient:
@@ -142,7 +174,7 @@ class DadataClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
     )
     async def geocode(self, address_raw: str) -> GeocodingResult:
         """
@@ -195,7 +227,7 @@ class DadataClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
     )
     async def find_party_by_id(self, inn_or_ogrn: str) -> PartyResult:
         """
@@ -230,6 +262,64 @@ class DadataClient:
             self._failed += 1
             logger.warning("Dadata findParty failed for '%s': %s", inn_or_ogrn, e)
             return PartyResult()
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
+    )
+    async def suggest_party(
+        self,
+        query: str,
+        count: int = 3,
+        region: Optional[str] = None,
+    ) -> list[PartyResult]:
+        """Search for organizations by name (+ optional region hint).
+
+        Uses Dadata suggest/party endpoint (free tier, same as address suggest).
+        Good for finding INN/OGRN when only organization name and city/region
+        are known (e.g. Silver Age scraper data).
+
+        Args:
+            query: Organization name, optionally with city/region in text.
+            count: Max results to return (1-20).
+            region: Optional region name to filter results (e.g. "Вологодская").
+        """
+        if not self._enabled or not query.strip():
+            return []
+
+        self._total_calls += 1
+
+        try:
+            headers = self._suggest_headers()
+            body: dict = {"query": query.strip(), "count": count}
+            if region:
+                body["locations"] = [{"region": region}]
+
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                resp = await client.post(
+                    DADATA_SUGGEST_PARTY_URL,
+                    json=body,
+                    headers=headers,
+                )
+                resp.raise_for_status()
+
+            suggestions = resp.json().get("suggestions", [])
+            if not suggestions:
+                return []
+
+            self._successful += 1
+            return [
+                self._parse_party(s.get("data", {}))
+                for s in suggestions
+                if s.get("data")
+            ]
+
+        except Exception as e:
+            self._failed += 1
+            logger.warning("Dadata suggest_party failed for '%s': %s", query[:60], e)
+            return []
 
     # ------------------------------------------------------------------
     # Raw API calls
@@ -335,19 +425,34 @@ class DadataClient:
         if data.get("emails"):
             emails = [e.get("value", "") for e in data["emails"] if e.get("value")]
 
-        name_data = data.get("name", {})
-        address_data = data.get("address", {})
+        name_data = data.get("name", {}) or {}
+        address_data = data.get("address", {}) or {}
+        addr_inner = address_data.get("data", {}) or {}
+        mgmt = data.get("management", {}) or {}
+        opf_data = data.get("opf", {}) or {}
+        state = data.get("state", {}) or {}
 
         return PartyResult(
             found=True,
             inn=data.get("inn"),
             ogrn=data.get("ogrn"),
-            name_full=name_data.get("full_with_opf") if isinstance(name_data, dict) else None,
-            name_short=name_data.get("short_with_opf") if isinstance(name_data, dict) else None,
-            address=address_data.get("value") if isinstance(address_data, dict) else None,
+            kpp=data.get("kpp"),
+            name_full=name_data.get("full_with_opf"),
+            name_short=name_data.get("short_with_opf"),
+            opf=opf_data.get("short"),
+            okved=data.get("okved"),
+            director_name=mgmt.get("name"),
+            director_post=mgmt.get("post"),
+            address=address_data.get("value"),
+            address_unrestricted=address_data.get("unrestricted_value"),
+            city_fias_id=_str_or_none(addr_inner.get("city_fias_id")),
+            region_fias_id=_str_or_none(addr_inner.get("region_fias_id")),
+            region_iso=_str_or_none(addr_inner.get("region_iso_code")),
+            geo_lat=_safe_float(addr_inner.get("geo_lat")),
+            geo_lon=_safe_float(addr_inner.get("geo_lon")),
             phones=phones,
             emails=emails,
-            status=data.get("state", {}).get("status") if isinstance(data.get("state"), dict) else None,
+            status=state.get("status"),
             raw_data=data,
         )
 

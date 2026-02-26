@@ -283,13 +283,71 @@ JSON
 
 *Недостатки (Cons):* Необходимость создания надежного механизма webhook-ответов от Harvester, чтобы Core знал об успешном завершении задачи или тайм-аутах.
 
-### **4\. API для модераторов (Source Manager UI)**
+### **4\. API для управления источниками (Source CRUD) и обогащения**
 
-Для управления подсистемой через Laravel Nova / Filament проектируются следующие внутренние эндпоинты:
+Реализованные внутренние эндпоинты для управления источниками, используемые как модераторами (Nova / Filament), так и AI-пайплайном (Harvester) для автоматического создания источников:
 
-* GET /api/internal/sources — Получение списка источников с фильтрами по статусу (last\_status), типу (kind) и региону.  
-* PATCH /api/internal/sources/{id} — Ручное изменение параметров (увеличение crawl\_period\_days, приостановка priority).  
-* GET /api/internal/source-proposals — Вывод предложений LLM-агента о добавлении новых источников (сформированных из парсинга ссылок внутри текстов). Выводит confidence\_score, reason и предложенный JSON parse\_profile.  
+#### **4.0. Источники к обходу (due)**
+
+* **Эндпоинт**: GET /api/internal/sources/due
+* **Описание**: Возвращает источники, которые пора обойти (для Laravel Scheduler и POST /harvest/run). Критерии: is\_active = true, organizer\_id задан, и (last\_crawled\_at IS NULL или last\_crawled\_at + crawl\_period\_days <= NOW()).
+* **Query-параметры**:
+  * limit (integer, опциональный): Максимум записей (по умолчанию 100, максимум 500).
+* **Структура ответа**: {"data": [{"id": "uuid", "base\_url": "https://...", "organizer\_id": "uuid", "existing\_entity\_id": "uuid", "source\_item\_id": "https://...", "kind": "org\_website"}]}
+
+#### **4.1. Список источников организатора**
+
+* **Эндпоинт**: GET /api/internal/sources
+* **Описание**: Возвращает список источников, привязанных к конкретному организатору.
+* **Query-параметры**:
+  * organizer\_id (UUID, обязательный): ID организатора.
+  * kind (string, опциональный): Фильтр по типу (org\_website, vk\_group, ok\_group, tg\_channel).
+  * is\_active (boolean, опциональный): Фильтр по активности.
+* **Структура ответа**: {"data": \[{"id": "uuid", "name": "...", "kind": "org\_website", "base\_url": "https://...", "last\_status": "pending", "is\_active": true}\]}
+
+#### **4.2. Создание нового источника**
+
+* **Эндпоинт**: POST /api/internal/sources
+* **Описание**: Создаёт новый источник и привязывает его к организатору. При kind=org\_website автоматически обновляет organizations.site\_urls.
+* **Структура запроса (Body)**:
+  * organizer\_id (UUID, обязательный): ID организатора из таблицы organizers.
+  * base\_url (string, обязательный): URL источника.
+  * kind (string, обязательный): Тип источника. Допустимые значения: org\_website, vk\_group, ok\_group, tg\_channel; агрегаторы: registry\_fpg, registry\_sonko, platform\_silverage; агрегаторы мероприятий: event\_aggregator, platform\_silverage\_events, afisha.
+  * name (string, опциональный): Название источника (по умолчанию — домен из URL).
+  * priority (integer, опциональный): Приоритет обхода (1-100, по умолчанию 50).
+  * crawl\_period\_days (integer, опциональный): Период обхода в днях (по умолчанию 7).
+* **Логика**:
+  * Проверяет уникальность пары (organizer\_id, base\_url). Если источник уже существует — возвращает status=exists.
+  * Для kind=org\_website обновляет JSONB-массив organizations.site\_urls, добавляя base\_url.
+* **Структура ответа**: {"status": "created", "source\_id": "uuid", "organizer\_id": "uuid", "base\_url": "...", "kind": "org\_website"}
+
+#### **4.3. Обновление источника**
+
+* **Эндпоинт**: PATCH /api/internal/sources/{id}
+* **Описание**: Обновляет параметры существующего источника. При изменении base\_url синхронизирует organizations.site\_urls.
+* **Структура запроса (Body)**: Все поля опциональные: base\_url, name, kind, last\_status, last\_crawled\_at (date/datetime), is\_active.
+* **Логика**:
+  * Проверяет на конфликт (organizer\_id, base\_url) при смене URL. Возвращает 409 Conflict при наличии дубликата.
+  * Для kind=org\_website при смене URL: удаляет старый URL из site\_urls и добавляет новый.
+* **Структура ответа**: {"status": "updated", "source\_id": "uuid", "old\_url": "...", "new\_url": "..."}
+
+#### **4.4. Организации без источников**
+
+* **Эндпоинт**: GET /api/internal/organizations/without-sources
+* **Описание**: Возвращает пагинированный список организаций, не имеющих ни одного активного источника. Используется Harvester для автоматического обогащения базы.
+* **Query-параметры**:
+  * page (integer, опциональный): Номер страницы (по умолчанию 1).
+  * per\_page (integer, опциональный): Количество на странице (по умолчанию 100, максимум 500).
+* **Структура ответа**: {"data": \[{"org\_id": "uuid", "organizer\_id": "uuid", "title": "...", "inn": "..."}\], "meta": {"total": 2847, "page": 1, "per\_page": 100, "last\_page": 29}}
+
+#### **4.5. Интеграция с Harvester (плановый обход)**
+
+* **Artisan-команда**: `php artisan harvest:dispatch-due [--limit=100] [--dry-run]` — выбирает источники к обходу (due), формирует тело для Harvester и отправляет POST /harvest/run. Требует в .env: HARVESTER\_URL, HARVESTER\_API\_TOKEN (токен должен совпадать с HARVESTER\_API\_TOKEN на стороне Harvester).
+* **Планировщик**: В `routes/console.php` можно включить расписание, например: `Schedule::command('harvest:dispatch-due', ['--limit' => 100])->daily()->at('02:00');`. На сервере должен быть запущен cron для `php artisan schedule:work` (или одна запись в crontab на `schedule:run` каждую минуту).
+
+#### **4.6. Проектируемые эндпоинты (Source Manager UI, v2)**
+
+* GET /api/internal/source-proposals — Вывод предложений LLM-агента о добавлении новых источников (сформированных из парсинга ссылок внутри текстов). Выводит confidence\_score, reason и предложенный JSON parse\_profile.
 * POST /api/internal/source-proposals/batch-accept — Массовое утверждение (batch) источников, например, после импорта реестра президентских грантов.
 
 ### **5\. Мост к AI-пайплайну и финальные контракты (End-to-End)**

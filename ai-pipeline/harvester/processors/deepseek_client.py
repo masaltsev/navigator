@@ -13,6 +13,7 @@ import logging
 import re
 from typing import Type, TypeVar
 
+import structlog
 from openai import APIConnectionError, APITimeoutError, OpenAI
 from pydantic import BaseModel, ValidationError
 from tenacity import (
@@ -23,7 +24,8 @@ from tenacity import (
     wait_exponential,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+_stdlib_logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -57,7 +59,7 @@ class DeepSeekClient:
         retry=retry_if_exception_type(
             (json.JSONDecodeError, ValidationError, APIConnectionError, APITimeoutError)
         ),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
     )
     def classify(
         self,

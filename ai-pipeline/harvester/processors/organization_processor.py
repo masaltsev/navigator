@@ -6,8 +6,9 @@
 existing_entity_id, полученного от Harvester до вызова LLM.
 """
 
-import logging
 from typing import Callable, Optional
+
+import structlog
 
 from enrichment.dadata_client import DadataClient, GeocodingResult
 from processors.deepseek_client import DeepSeekClient
@@ -18,7 +19,7 @@ from prompts.organization_prompt import (
 )
 from prompts.schemas import EntityType, HarvestInput, OrganizationOutput
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class OrganizationProcessor:

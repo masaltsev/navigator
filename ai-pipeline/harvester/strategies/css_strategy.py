@@ -21,13 +21,13 @@ and runs 10x faster.
 """
 
 import json
-import logging
 from pathlib import Path
 from typing import Optional
 
+import structlog
 from crawl4ai import CrawlerRunConfig, JsonCssExtractionStrategy, CacheMode
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _HARVESTER_ROOT = Path(__file__).resolve().parent.parent
 CSS_TEMPLATES_DIR = _HARVESTER_ROOT / "schemas" / "css_templates"

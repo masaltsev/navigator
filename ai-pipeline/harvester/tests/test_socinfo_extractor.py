@@ -241,6 +241,71 @@ class TestSocialLinks:
 
 
 # ---------------------------------------------------------------------------
+# Condensed text for enrichment pipeline (H11)
+# ---------------------------------------------------------------------------
+
+class TestBuildCondensedText:
+    """Tests for _build_condensed_text used in EnrichmentPipeline._try_site_extractor."""
+
+    def test_full_fields(self):
+        from search.enrichment_pipeline import _build_condensed_text
+
+        fields = {
+            "platform": "socinfo.ru",
+            "title": "КЦСОН Тестового района",
+            "short_title": "КЦСОН Тест",
+            "address_raw": "123456, г. Тест, ул. Ленина, 1",
+            "phones": ["+7(123)456-78-90", "+7(123)456-78-91"],
+            "emails": ["test@kcson.ru"],
+            "director": "Иванов И.И.",
+            "work_schedule": "пн-пт 9:00-18:00",
+            "description": "Центр социального обслуживания населения.",
+            "vk_url": "https://vk.com/kcson_test",
+            "ok_url": "",
+        }
+        result = _build_condensed_text(fields, "https://kcson.test.socinfo.ru/")
+
+        assert "КЦСОН Тестового района" in result
+        assert "КЦСОН Тест" in result
+        assert "123456" in result
+        assert "+7(123)456-78-90" in result
+        assert "test@kcson.ru" in result
+        assert "Иванов И.И." in result
+        assert "пн-пт" in result
+        assert "vk.com/kcson_test" in result
+        assert "ok.ru" not in result
+        assert len(result) < 1000
+
+    def test_minimal_fields(self):
+        from search.enrichment_pipeline import _build_condensed_text
+
+        fields = {"platform": "socinfo.ru", "title": "Тестовая организация"}
+        result = _build_condensed_text(fields, "https://test.socinfo.ru/")
+
+        assert "Тестовая организация" in result
+        assert "test.socinfo.ru" in result
+
+    def test_try_site_extractor_socinfo(self):
+        from search.enrichment_pipeline import EnrichmentPipeline
+
+        md = "[На главную - socinfo.ru]\n[![](logo.png)](https://test.socinfo.ru)\nМБУ «КЦСОН г. Тестов»\n## Адрес\n123456, г. Тестов"
+        result = EnrichmentPipeline._try_site_extractor(
+            "https://test.kmr.socinfo.ru/", md,
+        )
+        assert "МБУ «КЦСОН г. Тестов»" in result
+        assert len(result) < len(md) or len(md) < 500
+
+    def test_try_site_extractor_unknown_platform(self):
+        from search.enrichment_pipeline import EnrichmentPipeline
+
+        md = "Some random website content " * 100
+        result = EnrichmentPipeline._try_site_extractor(
+            "https://example.com", md,
+        )
+        assert result == md[:30000]
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

@@ -11,7 +11,6 @@ Usage:
     celery -A workers.celery_app inspect active
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -26,7 +25,9 @@ if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+from config.settings import get_settings
+
+REDIS_URL = get_settings().redis_url
 
 app = Celery(
     "harvester",
@@ -54,6 +55,7 @@ app.conf.update(
 
     task_routes={
         "workers.tasks.crawl_and_enrich": {"queue": "harvester"},
+        "workers.tasks.harvest_events": {"queue": "harvester"},
         "workers.tasks.process_batch": {"queue": "harvester-batch"},
     },
 

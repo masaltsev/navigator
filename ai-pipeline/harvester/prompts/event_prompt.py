@@ -73,12 +73,14 @@ decision routing:
 - score < 0.60 OR works_with_elderly == false → "rejected"
 
 ### Правило 7: Классификация — только коды из справочников
-- Возвращай ТОЛЬКО строковые коды (например, "24", "93")
-- Для thematic_categories используй ТОЛЬКО дочерние коды
-- НИКОГДА не выдумывай новые коды
+- **event_category_codes**: коды из справочника EVENT_CATEGORIES (lecture, workshop, webinar, consultation, meeting, concert, exhibition, course, holiday, other). Определи тип мероприятия и выбери один или несколько подходящих кодов.
+- **thematic_category_codes**: ТОЛЬКО дочерние коды из THEMATIC_CATEGORIES (например "24", "93") — тематика мероприятия в контексте платформы (здоровье, быт, активная жизнь и т.д.).
+- **service_codes**: коды из справочника SERVICES, если мероприятие связано с конкретными услугами.
+- Возвращай ТОЛЬКО коды, присутствующие в справочниках. НИКОГДА не выдумывай новые коды.
 
 ### Правило 8: suggested_taxonomy
-Используй если обнаружен формат/тип мероприятия, НЕ покрытый справочниками.
+Используй если обнаружен формат/тип мероприятия, НЕ покрытый справочниками (в т.ч. event_categories).
+target_dictionary может быть: event_categories | thematic_categories | services.
 Поле importance_for_elderly ОБЯЗАТЕЛЬНО.
 """
 

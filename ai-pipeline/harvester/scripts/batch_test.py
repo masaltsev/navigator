@@ -13,8 +13,6 @@ Usage:
 import argparse
 import asyncio
 import json
-import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -28,11 +26,14 @@ if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-)
-logger = logging.getLogger("batch_test")
+import structlog
+
+from config.logging import configure_logging
+from config.settings import get_settings
+
+configure_logging()
+settings = get_settings()
+logger = structlog.get_logger("batch_test")
 
 
 async def process_single(
@@ -81,8 +82,11 @@ async def process_single(
                             page_safe = page.url.replace("https://", "").replace("http://", "").rstrip("/").replace("/", "_")[:60]
                             (save_raw_dir / f"{page_safe}_page.txt").write_text(page.markdown[:100000], encoding="utf-8")
             else:
-                ua = os.getenv("CRAWL4AI_USER_AGENT", "")
-                browser_config = BrowserConfig(headless=True, enable_stealth=True, user_agent=ua)
+                browser_config = BrowserConfig(
+                    headless=settings.crawl4ai_headless,
+                    enable_stealth=True,
+                    user_agent=settings.crawl4ai_user_agent,
+                )
                 run_config = CrawlerRunConfig(
                     word_count_threshold=0, page_timeout=30000,
                     wait_until="domcontentloaded", delay_before_return_html=2.0,
@@ -111,8 +115,10 @@ async def process_single(
             return {"url": url, "status": "error", "error": f"crawl: {e}", "elapsed_s": round(time.time() - t0, 1)}
 
         try:
-            api_key = os.getenv("DEEPSEEK_API_KEY", "")
-            client = DeepSeekClient(api_key=api_key)
+            client = DeepSeekClient(
+                api_key=settings.deepseek_api_key,
+                model=settings.deepseek_model_name,
+            )
             processor = OrganizationProcessor(deepseek_client=client)
 
             harvest_input = HarvestInput(
@@ -129,10 +135,11 @@ async def process_single(
 
             geo_results = None
             if enrich_geo:
-                dadata_key = os.getenv("DADATA_API_KEY", "")
-                dadata_secret = os.getenv("DADATA_SECRET_KEY", "")
-                use_clean = os.getenv("DADATA_USE_CLEAN", "false").lower() in ("true", "1")
-                dadata = DadataClient(api_key=dadata_key, secret_key=dadata_secret, use_clean=use_clean)
+                dadata = DadataClient(
+                    api_key=settings.dadata_api_key,
+                    secret_key=settings.dadata_secret_key,
+                    use_clean=settings.dadata_use_clean,
+                )
                 if dadata.enabled and result.venues:
                     addresses = [v.address_raw for v in result.venues]
                     geo_results = await dadata.geocode_batch(addresses)
@@ -142,9 +149,10 @@ async def process_single(
 
             core_response = None
             if to_core:
-                core_url = os.getenv("CORE_API_URL", "")
-                core_token = os.getenv("CORE_API_TOKEN", "")
-                core_client = NavigatorCoreClient(base_url=core_url, api_token=core_token)
+                core_client = NavigatorCoreClient(
+                    base_url=settings.core_api_url,
+                    api_token=settings.core_api_token,
+                )
                 try:
                     core_response = await core_client.import_organizer(payload)
                 except Exception as e:
