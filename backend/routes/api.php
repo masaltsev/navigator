@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\DocumentationController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Internal\ImportController;
 use App\Http\Controllers\Internal\SourceController;
 use Illuminate\Support\Facades\Route;
+
+// API documentation (OpenAPI 3 / Swagger UI)
+Route::get('documentation/spec', [DocumentationController::class, 'spec'])->name('api.documentation.spec');
+Route::get('documentation', [DocumentationController::class, 'index'])->name('api.documentation');
 
 Route::prefix('v1')->group(function () {
     Route::get('/organizations', [OrganizationController::class, 'index']);

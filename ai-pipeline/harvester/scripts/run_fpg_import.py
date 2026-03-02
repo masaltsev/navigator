@@ -17,7 +17,10 @@ Usage:
     # Filter by specific direction
     python -m scripts.run_fpg_import --xlsx data/fpg/projects.xlsx --direction "социальное обслуживание"
 
-    # Save results to JSON
+    # Save results to data/runs/ (run_config.json, progress.jsonl, run_summary.json, report.json)
+    python -m scripts.run_fpg_import --xlsx data/fpg/projects.xlsx --limit 10 --run-id 2026-02-27_fpg
+
+    # Legacy: single output file
     python -m scripts.run_fpg_import --xlsx data/fpg/projects.xlsx --limit 10 --output data/fpg/results.json
 """
 
@@ -74,10 +77,16 @@ def parse_args() -> argparse.Namespace:
         help="Filter by specific grant direction (substring match)",
     )
     parser.add_argument(
+        "--run-id",
+        type=str,
+        default=None,
+        help="Run identifier: write to data/runs/<run_id>/ (run_config.json, progress.jsonl, run_summary.json, report.json)",
+    )
+    parser.add_argument(
         "--output", "-o",
         type=str,
         default=None,
-        help="Save results JSON to this path",
+        help="Save results JSON to this path (legacy; use --run-id to write to data/runs/)",
     )
     parser.add_argument(
         "--delay",
@@ -141,6 +150,14 @@ async def _run_analyze(xlsx_path: str, directions: set[str] | None) -> None:
 
 async def _run_pipeline(args: argparse.Namespace) -> None:
     """Run the full FPG pipeline."""
+    import time
+    from scripts.aggregator_run_writer import (
+        run_dir_path,
+        write_run_config,
+        append_progress,
+        write_run_summary,
+        fpg_report_to_progress_entries,
+    )
     from aggregators.fpg.fpg_pipeline import FPGPipeline
 
     directions = None
@@ -150,14 +167,38 @@ async def _run_pipeline(args: argparse.Namespace) -> None:
             if args.direction.lower() in d.lower()
         }
 
+    run_dir = run_dir_path(args.run_id) if args.run_id else None
+    output_path = None
+    if run_dir:
+        run_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(run_dir / "report.json")
+        config = {k: getattr(args, k, None) for k in ["xlsx", "limit", "direction", "delay", "dry_run"]}
+        write_run_config(run_dir, args.run_id, config)
+    elif args.output:
+        output_path = args.output
+
     pipeline = FPGPipeline(delay_between_orgs=args.delay)
+    t0 = time.monotonic()
     report = await pipeline.run(
         xlsx_path=args.xlsx,
         limit=args.limit,
         dry_run=args.dry_run,
         directions=directions,
-        output_path=args.output,
+        output_path=output_path,
     )
+    elapsed = time.monotonic() - t0
+
+    if run_dir:
+        for entry in fpg_report_to_progress_entries(report):
+            append_progress(run_dir, entry)
+        counters = {
+            "total": len(report.results),
+            "matched": report.matched,
+            "created": report.created,
+            "errors": report.errors,
+        }
+        write_run_summary(run_dir, counters, elapsed_sec=elapsed)
+        print(f"\nRun trace saved to {run_dir}")
 
     print()
     print(report.summary())
@@ -171,7 +212,7 @@ async def _run_pipeline(args: argparse.Namespace) -> None:
             print(f"  [{status:>9}] {r.name[:60]}")
             print(f"             INN={r.inn} | {r.region} | {r.project_count} projects | {website}")
 
-    if args.output:
+    if args.output and not run_dir:
         print(f"\nResults saved to {args.output}")
 
 

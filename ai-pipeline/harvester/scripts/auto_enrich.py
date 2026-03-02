@@ -27,6 +27,7 @@ Usage:
 import argparse
 import asyncio
 import json
+import os
 import signal
 import sys
 import time
@@ -36,6 +37,14 @@ from pathlib import Path
 _harvester_root = Path(__file__).resolve().parent.parent
 if str(_harvester_root) not in sys.path:
     sys.path.insert(0, str(_harvester_root))
+
+# Set writable dirs for Chromium/Playwright before any crawl4ai import (fixes DB path and sandbox cache)
+_browser_tmp = _harvester_root / "data" / "browser_profile"
+_playwright_browsers = _harvester_root / "data" / "playwright_browsers"
+_browser_tmp.mkdir(parents=True, exist_ok=True)
+_playwright_browsers.mkdir(parents=True, exist_ok=True)
+os.environ["TMPDIR"] = os.environ["TMP"] = os.environ["TEMP"] = str(_browser_tmp)
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(_playwright_browsers)
 
 _env_file = _harvester_root / ".env"
 if _env_file.exists():
@@ -201,6 +210,7 @@ async def run(args):
     deepseek = _get_deepseek_client()
 
     from search.enrichment_pipeline import EnrichmentPipeline, Tier
+    from search.yandex_xml_provider import region_from_api
 
     pipeline = EnrichmentPipeline(
         search_provider=provider,
@@ -262,9 +272,14 @@ async def run(args):
         organizer_id = org["organizer_id"]
         title = org.get("title", "(no title)")
         inn = org.get("inn", "") or ""
+        city = region_from_api(
+            org.get("region_iso"),
+            org.get("region_code"),
+            org.get("address_raw"),
+        )
 
         label = f"[{state.processed_count + 1}/{len(all_orgs)}]"
-        print(f"\n{label} {title[:60]}")
+        print(f"\n{label} {title[:60]}" + (f"  [{city}]" if city else ""))
 
         progress_entry: dict = {
             "org_id": org_id,
@@ -275,7 +290,7 @@ async def run(args):
 
         try:
             result = await pipeline.enrich_missing_source(
-                title, city="", inn=inn, source_id=org_id,
+                title, city=city, inn=inn, source_id=org_id,
             )
         except Exception as exc:
             logger.error("pipeline_error", org_id=org_id, error=str(exc))

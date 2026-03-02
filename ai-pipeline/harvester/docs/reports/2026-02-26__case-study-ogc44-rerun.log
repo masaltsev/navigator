@@ -1,0 +1,161 @@
+/Users/masaltsev/miniforge3/lib/python3.12/site-packages/requests/__init__.py:109: RequestsDependencyWarning: urllib3 (2.5.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.2) doesn't match a supported version!
+  warnings.warn(
+2026-02-26 21:34:42 [info     ] search_provider_selected       [search.provider] provider=yandex
+Provider: YandexSearchProvider
+Org: ОГБУ СО «Октябрьский геронтологический центр»
+Region: Костромская область
+URL (verify): http://ogc-44.ru/
+
+2026-02-26 21:34:42 [info     ] DadataClient enabled, mode=suggest [enrichment.dadata_client]
+2026-02-26 21:34:43 [debug    ] yandex_search_submitted        [search.yandex_xml_provider] operation_id=spr2lgtbp845bg1vgund
+2026-02-26 21:34:44 [info     ] yandex_search                  [search.yandex_xml_provider] elapsed=1.25 query='ОГБУ СО «Октябрьский геронтологический центр» "ogc-44" сайт' region_id=None results=11
+2026-02-26 21:34:45 [info     ] url_fixer_result               [search.url_fixer] best_score=90.0 best_url=http://ogc-44.ru/news/8775ba6b-bbd8-4479-a47f-53f40283e919.aspx candidates=11 fallback=False fragment=ogc-44 url=http://ogc-44.ru/
+[INIT].... → Crawl4AI 0.8.0 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 4.73s 
+[SCRAPE].. ◆ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/                                                  
+| ✓ | ⏱: 4.78s 
+2026-02-26 21:34:56 [info     ] Cache HIT: 832/3448 tokens cached (24.1%) [processors.deepseek_client]
+2026-02-26 21:34:56 [info     ] site_verified                  [search.site_verifier] confidence=0.95 is_main=True is_match=True org_found='ОГБУ «Октябрьский геронтологический центр»' url=http://ogc-44.ru/
+2026-02-26 21:34:56 [info     ] verify_early_stop              [search.site_verifier] confidence=0.95 url=http://ogc-44.ru/
+2026-02-26 21:34:56 [info     ] enrichment_verification        [search.enrichment_pipeline] confidence=0.95 crawl_error=None is_main_page=True is_match=True org='ОГБУ СО «Октябрьский геронтологический центр»' url=http://ogc-44.ru/
+[INIT].... → Crawl4AI 0.8.0 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 4.95s 
+[SCRAPE].. ◆ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/                                                  
+| ✓ | ⏱: 4.99s 
+2026-02-26 21:35:02 [info     ] Discovered 17 candidate subpages for http://ogc-44.ru/ [strategies.multi_page]
+[FETCH]... ↓ http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 1.51s 
+[SCRAPE].. ◆ http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 1.51s 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 2.61s 
+[SCRAPE].. ◆ http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 2.65s 
+[FETCH]... ↓ http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 1.41s 
+[SCRAPE].. ◆ http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 1.42s 
+[FETCH]... ↓ http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 1.41s 
+[SCRAPE].. ◆ http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 1.41s 
+[FETCH]... ↓ http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 1.38s 
+[SCRAPE].. ◆ http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 1.39s 
+2026-02-26 21:35:15 [info     ] Merged text limit reached (16827 chars), skipping remaining pages [strategies.multi_page]
+2026-02-26 21:35:15 [info     ] Multi-page crawl complete: http://ogc-44.ru/ — 6/6 pages ok, merged 16834 chars [strategies.multi_page]
+2026-02-26 21:35:15 [info     ] Organization system prompt built: ~54066 chars [processors.organization_processor]
+2026-02-26 21:35:36 [info     ] Cache HIT: 17280/23735 tokens cached (72.8%) [processors.deepseek_client]
+2026-02-26 21:35:36 [info     ] Classified: ОБЛАСТНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ ОКТЯБРЬСКИЙ ГЕРОНТОЛОГИЧЕСКИЙ ЦЕНТР | Score: 0.98 | Decision: accepted [processors.deepseek_client]
+2026-02-26 21:35:36 [info     ] enrichment_result              [search.enrichment_pipeline] error=None org='ОГБУ СО «Октябрьский геронтологический центр»' original_url=http://ogc-44.ru/ social_pages=0 success=True tier=auto verifications=1 verified_url=http://ogc-44.ru/
+Verified URL: http://ogc-44.ru/
+
+Running harvest (multi-page, Dadata venues, site extractor)...
+[INIT].... → Crawl4AI 0.8.0 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 5.57s 
+[SCRAPE].. ◆ http://ogc-44.ru/                                                  
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/                                                  
+| ✓ | ⏱: 5.61s 
+2026-02-26 21:35:42 [info     ] Discovered 17 candidate subpages for http://ogc-44.ru/ [strategies.multi_page]
+[FETCH]... ↓ http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 1.56s 
+[SCRAPE].. ◆ http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/kontakty                                          
+| ✓ | ⏱: 1.57s 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 3.25s 
+[SCRAPE].. ◆ http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/contacts                                          
+| ✓ | ⏱: 3.29s 
+[FETCH]... ↓ http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 1.41s 
+[SCRAPE].. ◆ http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/rekvizity                                         
+| ✓ | ⏱: 1.42s 
+[FETCH]... ↓ http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 1.42s 
+[SCRAPE].. ◆ http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/requisites                                        
+| ✓ | ⏱: 1.43s 
+[FETCH]... ↓ http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 1.42s 
+[SCRAPE].. ◆ http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/o-nas                                             
+| ✓ | ⏱: 1.42s 
+2026-02-26 21:35:56 [info     ] Merged text limit reached (16827 chars), skipping remaining pages [strategies.multi_page]
+2026-02-26 21:35:56 [info     ] Multi-page crawl complete: http://ogc-44.ru/ — 6/6 pages ok, merged 16834 chars [strategies.multi_page]
+2026-02-26 21:35:56 [info     ] Organization system prompt built: ~54066 chars [processors.organization_processor]
+2026-02-26 21:36:16 [info     ] Cache HIT: 23680/23735 tokens cached (99.8%) [processors.deepseek_client]
+2026-02-26 21:36:16 [info     ] Classified: ОБЛАСТНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ ОКТЯБРЬСКИЙ ГЕРОНТОЛОГИЧЕСКИЙ ЦЕНТР | Score: 0.98 | Decision: accepted [processors.deepseek_client]
+=== Organization (harvest) ===
+  title: ОБЛАСТНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ ОКТЯБРЬСКИЙ ГЕРОНТОЛОГИЧЕСКИЙ ЦЕН
+  short_title: ОГБУ «Октябрьский геронтологический центр»
+  inn: None
+  description: Октябрьский геронтологический центр — государственное учреждение, специализирующееся на комплексном социальном обслуживании и уходе за пожилыми людьми и инвалидами. Центр предоставляет стационарное со...
+  venues: 0
+  ai_decision: accepted confidence=0.98
+
+2026-02-26 21:36:16 [info     ] event_pages_discovered         [strategies.event_discovery] count=9 pages=['http://ogc-44.ru/news', 'http://ogc-44.ru/novosti', 'http://ogc-44.ru/afisha'] url=http://ogc-44.ru/
+[INIT].... → Crawl4AI 0.8.0 
+[ERROR]... × Error updating image dimensions: Page.evaluate: Execution context 
+was destroyed, most likely because of a navigation 
+[FETCH]... ↓ http://ogc-44.ru/news                                              
+| ✓ | ⏱: 5.31s 
+[SCRAPE].. ◆ http://ogc-44.ru/news                                              
+| ✓ | ⏱: 0.04s 
+[COMPLETE] ● http://ogc-44.ru/news                                              
+| ✓ | ⏱: 5.35s 
+2026-02-26 21:36:22 [info     ] event_page_processed           [strategies.event_discovery] candidates_found=0 page_url=http://ogc-44.ru/news
+[FETCH]... ↓ http://ogc-44.ru/novosti                                           
+| ✓ | ⏱: 3.04s 
+[SCRAPE].. ◆ http://ogc-44.ru/novosti                                           
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/novosti                                           
+| ✓ | ⏱: 3.05s 
+2026-02-26 21:36:25 [info     ] event_page_processed           [strategies.event_discovery] candidates_found=0 page_url=http://ogc-44.ru/novosti
+[FETCH]... ↓ http://ogc-44.ru/afisha                                            
+| ✓ | ⏱: 2.34s 
+[SCRAPE].. ◆ http://ogc-44.ru/afisha                                            
+| ✓ | ⏱: 0.00s 
+[COMPLETE] ● http://ogc-44.ru/afisha                                            
+| ✓ | ⏱: 2.34s 
+2026-02-26 21:36:27 [info     ] event_page_processed           [strategies.event_discovery] candidates_found=0 page_url=http://ogc-44.ru/afisha
+2026-02-26 21:36:28 [info     ] event_discovery_complete       [strategies.event_discovery] pages_crawled=9 total_candidates=0 url=http://ogc-44.ru/
+Event discovery: 9 pages, 0 candidates
+
+(Skip Core: run with --to-core to import org + source + events)
+Done.

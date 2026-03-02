@@ -11,6 +11,7 @@ Usage:
     celery -A workers.celery_app inspect active
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -27,7 +28,14 @@ if _env_file.exists():
 
 from config.settings import get_settings
 
-REDIS_URL = get_settings().redis_url
+_settings = get_settings()
+REDIS_URL = _settings.redis_url
+
+# Chromium/Playwright need writable temp dir (fixes "unable to open database file" in crawl tasks)
+_browser_dir = _settings.get_crawl4ai_browser_data_dir()
+os.environ.setdefault("TMPDIR", _browser_dir)
+os.environ.setdefault("TMP", _browser_dir)
+os.environ.setdefault("TEMP", _browser_dir)
 
 app = Celery(
     "harvester",

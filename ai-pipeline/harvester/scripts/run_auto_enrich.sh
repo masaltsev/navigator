@@ -28,11 +28,17 @@ fi
 
 RUN_ID="$1"
 shift
-EXTRA_ARGS=("$@")
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RUN_DIR="$SCRIPT_DIR/data/runs/$RUN_ID"
-mkdir -p "$RUN_DIR"
+BROWSER_DATA_DIR="${SCRIPT_DIR}/data/browser_profile"
+PLAYWRIGHT_BROWSERS_DIR="${SCRIPT_DIR}/data/playwright_browsers"
+mkdir -p "$RUN_DIR" "$BROWSER_DATA_DIR" "$PLAYWRIGHT_BROWSERS_DIR"
+# Chromium/Playwright: writable temp + browser binaries in project (not sandbox cache)
+export TMPDIR="${BROWSER_DATA_DIR}"
+export TMP="${BROWSER_DATA_DIR}"
+export TEMP="${BROWSER_DATA_DIR}"
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_DIR}"
 
 LOG_FILE="$RUN_DIR/wrapper.log"
 
@@ -46,10 +52,13 @@ while [ $attempt -lt $MAX_RETRIES ]; do
   attempt=$((attempt + 1))
   log "=== Attempt $attempt/$MAX_RETRIES ==="
   log "Run ID: $RUN_ID"
-  log "Args: ${EXTRA_ARGS[*]:-none}"
+  log "Args: $*"
+  log "TMPDIR=$TMPDIR PLAYWRIGHT_BROWSERS_PATH=$PLAYWRIGHT_BROWSERS_PATH"
+  # Run from harvester root so Python/Playwright see consistent cwd (helps Chromium db path under nohup)
+  cd "$SCRIPT_DIR"
 
   set +e
-  python -m scripts.auto_enrich --run-id "$RUN_ID" "${EXTRA_ARGS[@]}" 2>&1 | tee -a "$LOG_FILE"
+  env TMPDIR="$BROWSER_DATA_DIR" TMP="$BROWSER_DATA_DIR" TEMP="$BROWSER_DATA_DIR" PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_DIR" python -m scripts.auto_enrich --run-id "$RUN_ID" "$@" 2>&1 | tee -a "$LOG_FILE"
   EXIT_CODE=${PIPESTATUS[0]}
   set -e
 

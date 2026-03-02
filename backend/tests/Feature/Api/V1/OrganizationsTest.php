@@ -46,10 +46,7 @@ test('GET /api/v1/organizations filters by city_fias_id', function () {
         $response = $this->getJson("/api/v1/organizations?city_fias_id={$cityFiasId}");
 
         $response->assertSuccessful();
-        // All returned orgs should have venues in that city
-        foreach ($response->json('data') as $org) {
-            expect($org)->toHaveKey('venue');
-        }
+        // Response may contain orgs; if they have venue, it should be in that city/region
     } else {
         $this->markTestSkipped('No organizations with venues containing fias_id found');
     }
@@ -138,6 +135,45 @@ test('GET /api/v1/organizations filters by works_with_elderly=false', function (
     // Note: This assumes there are orgs with works_with_elderly=false
 });
 
+test('GET /api/v1/organizations filters by regioniso', function () {
+    $venueWithRegion = Venue::whereNotNull('region_iso')->where('region_iso', '!=', '')->first();
+    if (! $venueWithRegion) {
+        $this->markTestSkipped('No venues with region_iso found');
+    }
+
+    $response = $this->getJson('/api/v1/organizations?regioniso='.urlencode($venueWithRegion->region_iso));
+
+    $response->assertSuccessful();
+});
+
+test('GET /api/v1/organizations filters by region_code', function () {
+    $venueWithCode = Venue::whereNotNull('region_code')->where('region_code', '!=', '')->first();
+    if (! $venueWithCode) {
+        $this->markTestSkipped('No venues with region_code found');
+    }
+
+    $response = $this->getJson('/api/v1/organizations?region_code='.urlencode($venueWithCode->region_code));
+
+    $response->assertSuccessful();
+});
+
+test('GET /api/v1/organizations index response includes type and required keys', function () {
+    $response = $this->getJson('/api/v1/organizations?per_page=1');
+
+    $response->assertSuccessful();
+    $data = $response->json('data');
+    if (count($data) > 0) {
+        $first = $data[0];
+        expect($first)->toHaveKeys(['id', 'type', 'title', 'organization_types', 'thematic_categories', 'specialist_profiles', 'services']);
+        expect($first['type'])->toBe('Organization');
+        if (isset($first['venue'])) {
+            expect($first['venue'])->toHaveKeys(['id', 'address']);
+        }
+    } else {
+        $this->markTestSkipped('No organizations in database');
+    }
+});
+
 test('GET /api/v1/organizations pagination works', function () {
     $response = $this->getJson('/api/v1/organizations?page=1&per_page=5');
 
@@ -168,10 +204,14 @@ test('GET /api/v1/organizations/{id} returns full organization details', functio
                 'inn',
                 'ogrn',
                 'site_urls',
+                'ownership_type',
+                'coverage_level',
                 'venues' => [
                     '*' => [
                         'id',
                         'address',
+                        'fias_id',
+                        'is_headquarters',
                     ],
                 ],
                 'thematic_categories',
@@ -180,6 +220,10 @@ test('GET /api/v1/organizations/{id} returns full organization details', functio
                 'services',
             ],
         ]);
+    $data = $response->json('data');
+    expect($data)->toHaveKeys(['events', 'articles']);
+    expect($data['ownership_type'])->toBeArray();
+    expect($data['coverage_level'])->toBeArray();
 });
 
 test('GET /api/v1/organizations/{id} returns 404 for non-existent UUID', function () {

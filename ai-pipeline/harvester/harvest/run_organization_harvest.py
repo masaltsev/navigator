@@ -93,6 +93,7 @@ async def run_organization_harvest(
             headless=True,
             enable_stealth=True,
             user_agent=settings.crawl4ai_user_agent,
+            user_data_dir=settings.get_crawl4ai_browser_data_dir(),
         )
         run_config = CrawlerRunConfig(
             word_count_threshold=0,

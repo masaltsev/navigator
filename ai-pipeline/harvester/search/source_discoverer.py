@@ -17,13 +17,26 @@ from search.social_classifier import SocialLink, classify_social_url
 
 logger = structlog.get_logger(__name__)
 
+# Domains we treat as aggregators: company/org directories, registries, SEO-heavy
+# catalogues. Excluded from official_sites so we don't crawl or spend LLM tokens on them.
+# Can be extended with domains LLM has identified as aggregators in runs.
 _AGGREGATOR_DOMAINS = frozenset({
     # Maps & directories
     "2gis.ru", "zoon.ru", "yell.ru", "cataloxy.ru", "orgpage.ru",
     "spr.ru", "google.com", "google.ru", "maps.yandex.ru",
-    # Company registries
+    # Company/org registries and data providers
     "rusprofile.ru", "list-org.com", "egrul.nalog.ru",
     "checko.ru", "checkos.ru", "sbis.ru",
+    "kontur.ru",           # focus.kontur.ru, spark.kontur.ru, etc.
+    "companies.rbc.ru",   # RBC company directory
+    "audit-it.ru",
+    "spark-interfax.ru",
+    "fedresurs.ru",
+    # Medical/org directories (SEO, not org sites)
+    "prodoctorov.ru", "doctu.ru", "napriem.info",
+    # Volunteer/company directories
+    "dobro.ru", "companium.ru", "saby.ru", "b2b.house",
+    "gkbru.ru",           # regional directory
     # Government aggregators
     "bus.gov.ru",
     # Reference / encyclopedias
@@ -134,33 +147,42 @@ async def discover_sources(
     provider: WebSearchProvider,
     city: str = "",
     *,
-    num_results: int = 10,
+    num_results: int = 18,
     verify_reachable: bool = True,
     min_official_score: float = 15.0,
 ) -> DiscoveryResult:
     """Search for the organisation's website and social pages.
 
+    Aggregator domains (kontur.ru, audit-it.ru, prodoctorov.ru, etc.) are skipped
+    so we take the top of the search *without* aggregators and avoid wasting
+    crawl/LLM on them.
+
+    city: region and/or city (e.g. "Костромская область, Кострома"). For the search query
+        text we prefer city when present (more specific); for Yandex lr we use region only.
+
     Steps:
-      1. Build query: "<org_title>" <city> официальный сайт
-      2. Search via provider
-      3. For each result: classify as official / social / aggregator
+      1. Build query: "<org_title>" <query_geo> официальный сайт (query_geo = city when "region, city")
+      2. Search via provider with region_id from region (Yandex lr)
+      3. For each result: skip aggregators; classify as official / social
       4. Score official candidates
       5. Verify reachability of top candidates
     """
+    from search.yandex_xml_provider import region_name_to_yandex_lr, split_geo_for_search
+
+    query_geo, lr_geo = split_geo_for_search(city)
     region_id = None
-    if city:
+    if lr_geo:
         try:
-            from search.yandex_xml_provider import region_name_to_yandex_lr
-            region_id = region_name_to_yandex_lr(city)
+            region_id = region_name_to_yandex_lr(lr_geo)
         except Exception:
             pass
     results = await provider.search_for_site(
-        org_title, city, num_results=num_results, region_id=region_id
+        org_title, query_geo, num_results=num_results, region_id=region_id
     )
 
     query_parts = [f'"{org_title}"']
-    if city:
-        query_parts.append(city)
+    if query_geo:
+        query_parts.append(query_geo)
     query_parts.append("официальный сайт")
     query_used = " ".join(query_parts)
 

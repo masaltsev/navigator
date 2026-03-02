@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Venue;
+
 test('GET /api/v1/events returns successful response', function () {
     $response = $this->getJson('/api/v1/events');
 
@@ -12,6 +14,62 @@ test('GET /api/v1/events returns successful response', function () {
                 ],
             ],
         ]);
+});
+
+test('GET /api/v1/events returns full event structure when data present', function () {
+    $response = $this->getJson('/api/v1/events?per_page=1');
+
+    $response->assertSuccessful()
+        ->assertJsonStructure([
+            'data',
+            'meta' => [
+                'current_page',
+                'per_page',
+                'total',
+            ],
+        ]);
+    $data = $response->json('data');
+    if (count($data) > 0) {
+        $first = $data[0];
+        expect($first)->toHaveKeys([
+            'id',
+            'event_id',
+            'title',
+            'attendance_mode',
+            'start_datetime',
+            'end_datetime',
+            'status',
+        ]);
+        if (isset($first['venue'])) {
+            expect($first['venue'])->toHaveKeys(['id', 'address']);
+        }
+        if (isset($first['categories'])) {
+            expect($first['categories'])->toBeArray();
+        }
+        if (isset($first['organizer'])) {
+            expect($first['organizer'])->toHaveKeys(['id', 'type', 'name']);
+        }
+    }
+});
+
+test('GET /api/v1/events pagination works', function () {
+    $response = $this->getJson('/api/v1/events?per_page=3');
+
+    $response->assertSuccessful()
+        ->assertJsonStructure([
+            'data',
+            'meta' => [
+                'current_page',
+                'per_page',
+                'total',
+            ],
+        ])
+        ->assertJson([
+            'meta' => [
+                'per_page' => 3,
+            ],
+        ]);
+    expect(count($response->json('data')))->toBeLessThanOrEqual(3);
 });
 
 test('GET /api/v1/events filters by time_frame=today', function () {
@@ -68,6 +126,40 @@ test('GET /api/v1/events filters by geo-radius for offline events', function () 
     $radiusKm = 10;
 
     $response = $this->getJson("/api/v1/events?lat={$lat}&lng={$lng}&radius_km={$radiusKm}&attendance_mode=offline");
+
+    $response->assertSuccessful();
+});
+
+test('GET /api/v1/events filters by city_fias_id', function () {
+    $venue = Venue::whereNotNull('fias_id')->where('fias_id', '!=', '')->first();
+    if (! $venue) {
+        $this->markTestSkipped('No venues with fias_id found');
+    }
+    $cityFiasId = substr($venue->fias_id, 0, 36);
+
+    $response = $this->getJson('/api/v1/events?city_fias_id='.urlencode($cityFiasId));
+
+    $response->assertSuccessful();
+});
+
+test('GET /api/v1/events filters by regioniso', function () {
+    $venue = Venue::whereNotNull('region_iso')->where('region_iso', '!=', '')->first();
+    if (! $venue) {
+        $this->markTestSkipped('No venues with region_iso found');
+    }
+
+    $response = $this->getJson('/api/v1/events?regioniso='.urlencode($venue->region_iso));
+
+    $response->assertSuccessful();
+});
+
+test('GET /api/v1/events filters by region_code', function () {
+    $venue = Venue::whereNotNull('region_code')->where('region_code', '!=', '')->first();
+    if (! $venue) {
+        $this->markTestSkipped('No venues with region_code found');
+    }
+
+    $response = $this->getJson('/api/v1/events?region_code='.urlencode($venue->region_code));
 
     $response->assertSuccessful();
 });

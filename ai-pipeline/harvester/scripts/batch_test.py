@@ -86,6 +86,7 @@ async def process_single(
                     headless=settings.crawl4ai_headless,
                     enable_stealth=True,
                     user_agent=settings.crawl4ai_user_agent,
+                    user_data_dir=settings.get_crawl4ai_browser_data_dir(),
                 )
                 run_config = CrawlerRunConfig(
                     word_count_threshold=0, page_timeout=30000,

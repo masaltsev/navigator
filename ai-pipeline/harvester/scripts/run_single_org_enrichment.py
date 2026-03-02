@@ -54,6 +54,11 @@ async def main() -> None:
 
     configure_logging()
     settings = get_settings()
+    # Chromium/Playwright need writable temp dir (avoids "unable to open database file")
+    browser_dir = settings.get_crawl4ai_browser_data_dir()
+    os.environ.setdefault("TMPDIR", browser_dir)
+    os.environ.setdefault("TMP", browser_dir)
+    os.environ.setdefault("TEMP", browser_dir)
     provider = get_search_provider()
     if not provider:
         print("ERROR: No search provider (set SEARCH_PROVIDER and/or Yandex/DDG keys)")

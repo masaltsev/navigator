@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\CoverageLevel;
 use App\Models\Event;
 use App\Models\EventCategory;
-use App\Models\EventInstance;
 use App\Models\InitiativeGroup;
 use App\Models\Organization;
 use App\Models\OrganizationType;
@@ -616,6 +615,10 @@ class ImportController extends Controller
     /**
      * Return paginated list of organizations that have no active sources.
      *
+     * Only organizations with status = 'approved' are returned, so the harvester
+     * does not crawl test/draft/rejected data. Public API already filters by
+     * status = 'approved'; this keeps internal and crawl lists aligned.
+     *
      * GET /api/internal/organizations/without-sources?page=1&per_page=100
      */
     public function organizationsWithoutSources(Request $request): JsonResponse
@@ -624,6 +627,7 @@ class ImportController extends Controller
 
         $query = Organization::query()
             ->whereNull('organizations.deleted_at')
+            ->where('organizations.status', 'approved')
             ->whereNotExists(function ($sub) {
                 $sub->select(DB::raw(1))
                     ->from('organizers')
@@ -642,6 +646,9 @@ class ImportController extends Controller
                 'organizers.id as organizer_id',
                 'organizations.title',
                 'organizations.inn',
+                DB::raw('(SELECT v.region_iso FROM organization_venues ov INNER JOIN venues v ON v.id = ov.venue_id AND v.deleted_at IS NULL WHERE ov.organization_id = organizations.id LIMIT 1) as region_iso'),
+                DB::raw('(SELECT v.region_code FROM organization_venues ov INNER JOIN venues v ON v.id = ov.venue_id AND v.deleted_at IS NULL WHERE ov.organization_id = organizations.id LIMIT 1) as region_code'),
+                DB::raw('(SELECT LEFT(v.address_raw, 300) FROM organization_venues ov INNER JOIN venues v ON v.id = ov.venue_id AND v.deleted_at IS NULL WHERE ov.organization_id = organizations.id LIMIT 1) as address_raw'),
             ])
             ->orderBy('organizations.title');
 

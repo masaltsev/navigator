@@ -62,6 +62,7 @@ async def crawl(url: str, save_raw_path: str | None = None) -> str:
         headless=settings.crawl4ai_headless,
         enable_stealth=True,
         user_agent=settings.crawl4ai_user_agent or _USER_AGENT,
+        user_data_dir=settings.get_crawl4ai_browser_data_dir(),
     )
     run_config = CrawlerRunConfig(
         word_count_threshold=0,

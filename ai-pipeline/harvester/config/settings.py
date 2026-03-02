@@ -6,8 +6,11 @@ here. Use ``get_settings()`` to obtain a cached singleton instead of calling
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_HARVESTER_ROOT = Path(__file__).resolve().parent.parent
 
 
 @lru_cache(maxsize=1)
@@ -43,9 +46,13 @@ class HarvesterSettings(BaseSettings):
     # ---- Redis / Celery ----
     redis_url: str = "redis://localhost:6379/0"
 
-    # ---- Crawl4AI ----
+    # ---- Crawl4AI / Playwright ----
     crawl4ai_headless: bool = True
     crawl4ai_user_agent: str = "NavigatorHarvester/1.0 (+https://navigator.vnuki.fund)"
+    # Writable dir for browser profile (avoids "unable to open database file" when /tmp is read-only or shared)
+    crawl4ai_browser_data_dir: str = ""
+    # Where Playwright installs/looks for browser binaries (avoids cursor-sandbox or system cache paths)
+    playwright_browsers_path: str = ""
 
     # ---- Harvester API ----
     harvester_api_token: str = ""
@@ -75,3 +82,21 @@ class HarvesterSettings(BaseSettings):
         """Model name without provider prefix (e.g. 'deepseek-chat')."""
         m = self.deepseek_model
         return m.split("/", 1)[1] if "/" in m else m
+
+    def get_crawl4ai_browser_data_dir(self) -> str:
+        """Writable dir for Playwright/Chromium profile (fixes 'unable to open database file')."""
+        if self.crawl4ai_browser_data_dir:
+            p = Path(self.crawl4ai_browser_data_dir)
+        else:
+            p = _HARVESTER_ROOT / "data" / "browser_profile"
+        p.mkdir(parents=True, exist_ok=True)
+        return str(p)
+
+    def get_playwright_browsers_path(self) -> str:
+        """Dir for Playwright browser binaries (so install/launch use project path, not sandbox cache)."""
+        if self.playwright_browsers_path:
+            p = Path(self.playwright_browsers_path)
+        else:
+            p = _HARVESTER_ROOT / "data" / "playwright_browsers"
+        p.mkdir(parents=True, exist_ok=True)
+        return str(p)

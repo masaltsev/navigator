@@ -8,11 +8,14 @@ Usage:
     # Dry-run: scrape 5 practices + events, show what would be imported
     python -m scripts.run_silverage_import --max-practices 5 --dry-run
 
-    # Import first 10 organizations (with website discovery + harvest)
-    python -m scripts.run_silverage_import --max-practices 20 --limit-orgs 10
+    # Import first 10 organizations; save run to data/runs/2026-02-27_silverage/
+    python -m scripts.run_silverage_import --max-practices 20 --limit-orgs 10 --run-id 2026-02-27_silverage
 
-    # Full import with caching and output
-    python -m scripts.run_silverage_import --cache-dir data/silverage/cache --output data/silverage/results.json
+    # Full import with run trace (run_config.json, progress.jsonl, run_summary.json, report.json)
+    python -m scripts.run_silverage_import --cache-dir data/silverage/cache --run-id 2026-02-27_silverage
+
+    # Legacy: single output file
+    python -m scripts.run_silverage_import --max-practices 5 --output data/silverage/results.json
 
     # Skip events
     python -m scripts.run_silverage_import --max-pages 3 --no-events --dry-run
@@ -73,10 +76,16 @@ def parse_args() -> argparse.Namespace:
         help="Directory for caching scraped pages (avoids re-fetching)",
     )
     parser.add_argument(
+        "--run-id",
+        type=str,
+        default=None,
+        help="Run identifier: write to data/runs/<run_id>/ (run_config.json, progress.jsonl, run_summary.json, report.json)",
+    )
+    parser.add_argument(
         "--output", "-o",
         type=str,
         default=None,
-        help="Save results JSON to this path",
+        help="Save results JSON to this path (legacy; use --run-id to write to data/runs/)",
     )
     parser.add_argument(
         "--scrape-delay",
@@ -148,20 +157,56 @@ async def _run_analyze(args: argparse.Namespace) -> None:
 
 
 async def _run_pipeline(args: argparse.Namespace) -> None:
+    import time
+    from scripts.aggregator_run_writer import (
+        run_dir_path,
+        write_run_config,
+        append_progress,
+        write_run_summary,
+        silverage_report_to_progress_entries,
+    )
+
     from aggregators.silverage.silverage_pipeline import SilverAgePipeline
+
+    run_dir = run_dir_path(args.run_id) if args.run_id else None
+    output_path = None
+    if run_dir:
+        run_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(run_dir / "report.json")
+        config = {k: getattr(args, k, None) for k in ["max_pages", "max_practices", "limit_orgs", "no_events", "cache_dir", "scrape_delay", "dry_run"]}
+        write_run_config(run_dir, args.run_id, config)
+    elif args.output:
+        output_path = args.output
 
     pipeline = SilverAgePipeline(
         scrape_delay=args.scrape_delay,
         cache_dir=args.cache_dir,
     )
+    t0 = time.monotonic()
     report = await pipeline.run(
         max_pages=args.max_pages,
         max_practices=args.max_practices,
         limit_orgs=args.limit_orgs,
         dry_run=args.dry_run,
         scrape_events=not args.no_events,
-        output_path=args.output,
+        output_path=output_path,
     )
+    elapsed = time.monotonic() - t0
+
+    if run_dir:
+        for entry in silverage_report_to_progress_entries(report):
+            append_progress(run_dir, entry)
+        counters = {
+            "orgs_created": report.orgs_created,
+            "orgs_matched": report.orgs_matched,
+            "orgs_errors": report.orgs_errors,
+            "total_orgs": len(report.org_results),
+            "total_events": len(report.event_results),
+            "total_practices": report.total_practices,
+            "unique_organizations": report.unique_organizations,
+        }
+        write_run_summary(run_dir, counters, elapsed_sec=elapsed)
+        print(f"\nRun trace saved to {run_dir}")
 
     print()
     print(report.summary())
@@ -181,7 +226,7 @@ async def _run_pipeline(args: argparse.Namespace) -> None:
             print(f"  {r.date_text} | {r.title[:60]}")
             print(f"             {r.location} | {r.page_url}")
 
-    if args.output:
+    if args.output and not run_dir:
         print(f"\nResults saved to {args.output}")
 
 

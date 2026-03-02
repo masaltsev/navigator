@@ -3,3 +3,5 @@
 __pycache__/
 *.pyc
 .crawl4ai/
+data/browser_profile/
+data/playwright_browsers/

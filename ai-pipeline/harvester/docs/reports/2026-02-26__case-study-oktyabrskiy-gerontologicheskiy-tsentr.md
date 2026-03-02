@@ -158,3 +158,25 @@
 
 3. **Dadata в пайплайне обогащения**  
    В `EnrichmentPipeline` при отсутствии ИНН вызывается Dadata `suggest_party(название, регион)`. Полученные ИНН/ОГРН передаются в верификатор и после harvest мержатся в payload (ИНН, ОГРН, контакты, адрес как venue с fias_id/координатами из Dadata). Таким образом, легальная часть и контакты организации заполняются из реестра даже без сайта. См. `search/enrichment_pipeline.py` — `_dadata_suggest`, `_merge_dadata_into_harvest`.
+
+---
+
+## 10. Повторный прогон после фикса браузера (2026-02-26)
+
+После исправления проблем Playwright/Chromium (TMPDIR, PLAYWRIGHT_BROWSERS_PATH, arm64) кейс повторно прогнан **без** `--skip-verify`, с `HARVESTER_LOG_LEVEL=DEBUG` и с работающим браузером:
+
+**Команда:**  
+`python -m scripts.run_single_org_enrichment "ОГБУ СО «Октябрьский геронтологический центр»" "Костромская область" --url "http://ogc-44.ru/"`
+
+**Результат (при работающем браузере):** Краул прошёл, верификатор вернул **confidence=0.95, is_match=True, is_main_page=True** для http://ogc-44.ru/. Tier **AUTO**, выполнен полный harvest и event discovery.
+
+**Вывод:** Исходное «ложное отрицание» (Прогон 2: confidence=0.0) было следствием **сбоя краула/браузера** в том окружении. При работающем Chromium тот же верификатор принимает ogc-44.ru (0.95). Для кейсов вроде «Вызов» (H20), где краул есть, а LLM даёт 0.0 из‑за контекста/главной страницы, доработки H18–H19 по-прежнему актуальны.
+
+**Полный лог (DEBUG):** [2026-02-26__case-study-ogc44-rerun.log](2026-02-26__case-study-ogc44-rerun.log) — в нём видны `site_verified` (0.95), `enrichment_verification`, Crawl4AI fetch/complete, multi-page, OrganizationProcessor, event_discovery. Повторный запуск с сохранением в файл:
+
+```bash
+cd ai-pipeline/harvester
+export TMPDIR="$(pwd)/data/browser_profile" TMP="$TMPDIR" TEMP="$TMPDIR" PLAYWRIGHT_BROWSERS_PATH="$(pwd)/data/playwright_browsers"
+HARVESTER_LOG_LEVEL=DEBUG python -m scripts.run_single_org_enrichment \
+  "ОГБУ СО «Октябрьский геронтологический центр»" "Костромская область" --url "http://ogc-44.ru/" 2>&1 | tee docs/reports/2026-02-26__case-study-ogc44-rerun.log
+```

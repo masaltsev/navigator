@@ -16,8 +16,12 @@ Usage:
 """
 
 import json
+import os
 import re
+import subprocess
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import structlog
@@ -30,6 +34,46 @@ from config.settings import get_settings
 from processors.deepseek_client import DeepSeekClient
 
 logger = structlog.get_logger(__name__)
+
+_HARVESTER_ROOT = Path(__file__).resolve().parent.parent
+_playwright_install_attempted: bool = False
+
+
+def _ensure_playwright_chromium() -> bool:
+    """Run 'playwright install chromium' once per process so crawl works without manual setup."""
+    global _playwright_install_attempted
+    if _playwright_install_attempted:
+        return False
+    _playwright_install_attempted = True
+    try:
+        logger.info("playwright_install", message="Installing Playwright Chromium (one-time)")
+        settings = get_settings()
+        install_env = {
+            **dict(os.environ),
+            "TMPDIR": settings.get_crawl4ai_browser_data_dir(),
+            "PLAYWRIGHT_BROWSERS_PATH": settings.get_playwright_browsers_path(),
+        }
+        result = subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            cwd=str(_HARVESTER_ROOT),
+            env=install_env,
+            timeout=300,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            logger.warning(
+                "playwright_install_failed",
+                returncode=result.returncode,
+                stderr=(result.stderr or "")[:500],
+                stdout=(result.stdout or "")[:300],
+            )
+            return False
+        logger.info("playwright_install", message="Playwright Chromium installed")
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.warning("playwright_install_failed", error=str(e))
+        return False
 
 # Коды регионов РФ в доменах (44 = Кострома, 35 = Вологда, 36 = Воронеж и т.д.)
 _REGION_CODE_HINT = (
@@ -135,6 +179,7 @@ _VERIFY_SYSTEM_PROMPT = """Ты — ассистент, определяющий
 4. Агрегаторы (checko.ru, rusprofile.ru, allpans.ru и т.п.) — НЕ официальные сайты, is_official_site = false.
 5. Страницы нашего каталога (navigator.vnuki.fund) — НЕ официальные сайты.
 6. Коммерческие компании (магазины, рестораны, IT-компании) — НЕ подходят, если ожидается социальная организация. Одинаковое название ≠ одна организация.
+6a. Если в запросе указан регион/город организации — используй его для различения одноимённых организаций (например, «Вызов» в Мурманске vs премия «Вызов»).
 7. Если URL ведёт не на главную страницу (например, /news/123, /documents/...), укажи is_main_page = false и suggested_main_url.
 8. Соцсети (vk.com, ok.ru, t.me) — если это ОФИЦИАЛЬНАЯ группа/канал организации, то is_official_site = true.
 9. Если на странице мало текста, но домен явно соответствует организации — ставь confidence 0.6-0.7 (а не 0.0).
@@ -156,6 +201,7 @@ def _build_verify_user_message(
     candidate_url: str,
     expected_org_title: str,
     expected_inn: str = "",
+    region_or_city: str = "",
 ) -> str:
     parts = [
         f"URL страницы: {candidate_url}",
@@ -163,6 +209,8 @@ def _build_verify_user_message(
     ]
     if expected_inn:
         parts.append(f"Ожидаемый ИНН: {expected_inn}")
+    if region_or_city:
+        parts.append(f"Регион/город организации: {region_or_city}")
     parts.append(_domain_hint(candidate_url, expected_org_title))
 
     parts.append("--- НАЧАЛО ТЕКСТА СТРАНИЦЫ ---")
@@ -196,6 +244,7 @@ class SiteVerifier:
         candidate_url: str,
         expected_org_title: str,
         expected_inn: str = "",
+        region_or_city: str = "",
     ) -> VerifyResult:
         page_text, crawl_error = await self._crawl_single_page(candidate_url)
 
@@ -208,6 +257,7 @@ class SiteVerifier:
 
         user_msg = _build_verify_user_message(
             page_text, candidate_url, expected_org_title, expected_inn,
+            region_or_city=region_or_city,
         )
 
         try:
@@ -238,11 +288,14 @@ class SiteVerifier:
             is_main=verification.is_main_page,
         )
         if not verification.is_official_site and verification.confidence <= 0.0:
+            # Debug: what did we send to LLM (helps diagnose 100% reject after restart)
+            page_preview = (page_text[:400] + "…") if len(page_text) > 400 else page_text
             logger.warning(
                 "site_verify_rejected",
                 url=candidate_url[:80],
                 expected_org=expected_org_title[:50],
-                page_text_preview=page_text[:500].replace("\n", " "),
+                page_text_len=len(page_text),
+                page_text_preview=page_preview.replace("\n", " ")[:500],
                 reasoning=verification.reasoning[:200] if verification.reasoning else "",
             )
 
@@ -260,6 +313,7 @@ class SiteVerifier:
         expected_inn: str = "",
         *,
         max_candidates: int = 3,
+        region_or_city: str = "",
     ) -> list[VerifyResult]:
         """Verify multiple candidates, return all results.
 
@@ -268,7 +322,10 @@ class SiteVerifier:
         results: list[VerifyResult] = []
 
         for url in candidates[:max_candidates]:
-            result = await self.verify(url, expected_org_title, expected_inn)
+            result = await self.verify(
+                url, expected_org_title, expected_inn,
+                region_or_city=region_or_city,
+            )
             results.append(result)
 
             if result.is_match and result.is_main_page and result.confidence >= 0.8:
@@ -279,10 +336,16 @@ class SiteVerifier:
 
     async def _crawl_single_page(self, url: str) -> tuple[str, Optional[str]]:
         """Crawl a single page, return (text, error)."""
+        # Force project paths so Chromium/Playwright don't use sandbox or system cache
+        settings = get_settings()
+        browser_dir = settings.get_crawl4ai_browser_data_dir()
+        os.environ["TMPDIR"] = os.environ["TMP"] = os.environ["TEMP"] = browser_dir
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = settings.get_playwright_browsers_path()
         browser_config = BrowserConfig(
             headless=self._headless,
             enable_stealth=True,
             user_agent=get_settings().crawl4ai_user_agent or _USER_AGENT,
+            user_data_dir=get_settings().get_crawl4ai_browser_data_dir(),
         )
         config = CrawlerRunConfig(
             word_count_threshold=0,
@@ -300,11 +363,27 @@ class SiteVerifier:
                 if not res.success:
                     return "", f"crawl failed: {res.error_message}"
 
-                text = res.markdown or ""
+                text = (res.markdown or "") or (getattr(res, "fit_markdown", None) or "")
                 if not text and hasattr(res, "markdown_v2") and res.markdown_v2:
                     text = res.markdown_v2.fit_markdown or ""
                 if not text or len(text.strip()) < 50:
                     return "", "page too short or empty"
                 return text, None
         except Exception as exc:
+            err_msg = str(exc)
+            # Auto-install Playwright Chromium once if missing (so harvester runs without manual setup)
+            if ("Executable doesn't exist" in err_msg or "playwright install" in err_msg.lower()) and _ensure_playwright_chromium():
+                try:
+                    async with AsyncWebCrawler(config=browser_config) as crawler:
+                        res = await crawler.arun(url=url, config=config)
+                        if not res.success:
+                            return "", f"crawl failed: {res.error_message}"
+                        text = (res.markdown or "") or (getattr(res, "fit_markdown", None) or "")
+                        if not text and hasattr(res, "markdown_v2") and res.markdown_v2:
+                            text = res.markdown_v2.fit_markdown or ""
+                        if not text or len(text.strip()) < 50:
+                            return "", "page too short or empty"
+                        return text, None
+                except Exception as retry_exc:
+                    return "", f"crawl exception: {retry_exc}"
             return "", f"crawl exception: {exc}"

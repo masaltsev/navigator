@@ -27,6 +27,20 @@ class TestIsAggregator:
     def test_yandex_maps(self):
         assert _is_aggregator("https://yandex.ru/maps/org/kcson/123")
 
+    def test_kontur(self):
+        assert _is_aggregator("https://focus.kontur.ru/entity?query=123")
+        assert _is_aggregator("https://spark.kontur.ru/company/123")
+
+    def test_companies_rbc(self):
+        assert _is_aggregator("https://companies.rbc.ru/id/123")
+
+    def test_audit_it(self):
+        assert _is_aggregator("https://www.audit-it.ru/contragent/123")
+
+    def test_prodoctorov_dobro(self):
+        assert _is_aggregator("https://prodoctorov.ru/moskva/lpu/123")
+        assert _is_aggregator("https://dobro.ru/organizations/10016323/about")
+
 
 class TestScoreOfficialSite:
     def test_gov_ru_bonus(self):

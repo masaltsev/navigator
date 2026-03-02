@@ -88,7 +88,12 @@ class FPGCardScraper:
         try:
             from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 
-            browser_config = BrowserConfig(headless=True)
+            from config.settings import get_settings
+
+            browser_config = BrowserConfig(
+                headless=True,
+                user_data_dir=get_settings().get_crawl4ai_browser_data_dir(),
+            )
             run_config = CrawlerRunConfig(
                 wait_until="networkidle",
                 page_timeout=30000,
@@ -124,7 +129,12 @@ class FPGCardScraper:
         try:
             from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 
-            browser_config = BrowserConfig(headless=True)
+            from config.settings import get_settings
+
+            browser_config = BrowserConfig(
+                headless=True,
+                user_data_dir=get_settings().get_crawl4ai_browser_data_dir(),
+            )
             run_config = CrawlerRunConfig(
                 wait_until="networkidle",
                 page_timeout=30000,

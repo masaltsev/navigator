@@ -194,9 +194,25 @@ class EnrichmentPipeline:
 
             if candidate_urls:
                 verified = await self._verify_candidates(
-                    candidate_urls, org_title, inn,
+                    candidate_urls, org_title, inn, city=city,
                 )
                 result.all_verifications = verified
+                for v in verified:
+                    logger.info(
+                        "enrichment_verification",
+                        org=org_title[:50],
+                        url=v.url[:80],
+                        confidence=getattr(v, "confidence", 0.0),
+                        is_match=getattr(v, "is_match", False),
+                        is_main_page=getattr(v, "is_main_page", False),
+                        crawl_error=v.crawl_error if getattr(v, "crawl_error", None) else None,
+                    )
+                if verified and all(getattr(v, "crawl_error", None) for v in verified):
+                    logger.warning(
+                        "enrichment_all_verifications_failed",
+                        org=org_title[:50],
+                        first_error=verified[0].crawl_error[:200] if verified[0].crawl_error else "",
+                    )
 
                 best = self._pick_best_verified(verified)
                 if best:
@@ -240,6 +256,10 @@ class EnrichmentPipeline:
         """Find and verify a website for an org that has no source at all.
 
         Args:
+            city: Region and/or city for search, Dadata suggest and LLM verification.
+                Same param is used from: backend (orgs without sources, from region_iso +
+                address_raw), Silver Age (org.region), SONKO (org.region_from_address),
+                FPG (org.region). Ideally "Region, City" to disambiguate same-name orgs.
             additional_context: Extra text (e.g. practice descriptions from
                 aggregators) prepended to raw_text before LLM classification.
             source_kind: Source kind tag for HarvestInput (e.g. "platform_silverage").
@@ -282,7 +302,7 @@ class EnrichmentPipeline:
 
             if candidate_urls:
                 verified = await self._verify_candidates(
-                    candidate_urls, org_title, inn,
+                    candidate_urls, org_title, inn, city=city,
                 )
                 result.all_verifications = verified
 
@@ -294,6 +314,13 @@ class EnrichmentPipeline:
                         confidence=v.confidence,
                         is_match=v.is_match,
                         is_main_page=v.is_main_page,
+                        crawl_error=v.crawl_error if getattr(v, "crawl_error", None) else None,
+                    )
+                if verified and all(getattr(v, "crawl_error", None) for v in verified):
+                    logger.warning(
+                        "enrichment_all_verifications_failed",
+                        org=org_title[:50],
+                        first_error=verified[0].crawl_error[:200] if verified[0].crawl_error else "",
                     )
 
                 best = self._pick_best_verified(verified)
@@ -439,12 +466,15 @@ class EnrichmentPipeline:
         urls: list[str],
         org_title: str,
         inn: str,
+        *,
+        city: str = "",
     ) -> list[VerifyResult]:
         return await self._verifier.verify_batch(
             urls,
             expected_org_title=org_title,
             expected_inn=inn,
             max_candidates=self._max_verify,
+            region_or_city=city,
         )
 
     def _pick_best_verified(self, results: list[VerifyResult]) -> Optional[VerifyResult]:

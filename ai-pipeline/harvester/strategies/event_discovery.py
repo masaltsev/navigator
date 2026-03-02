@@ -146,6 +146,7 @@ class EventDiscoverer:
             headless=True,
             enable_stealth=True,
             user_agent=get_settings().crawl4ai_user_agent,
+            user_data_dir=get_settings().get_crawl4ai_browser_data_dir(),
         )
         crawl_config = CrawlerRunConfig(
             word_count_threshold=0,

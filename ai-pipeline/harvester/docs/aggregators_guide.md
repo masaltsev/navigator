@@ -73,6 +73,8 @@ aggregators/<name>/
 CLI-скрипт: `scripts/run_<name>_import.py`
 Celery-задача: `workers/tasks.py` → `process_<name>_batch`
 
+**Следы запусков** — в одном месте: `data/runs/`. При передаче `--run-id <id>` (например `2026-02-27_silverage`) скрипты пишут в `data/runs/<run_id>/` те же артефакты, что и `auto_enrich`: `run_config.json`, `progress.jsonl` (по строке на организацию/событие), `run_summary.json`, плюс полный отчёт в `report.json`. Формат совместим с папкой запусков «организаций без источников».
+
 ### Общие зависимости
 
 Все агрегаторы переиспользуют инфраструктуру Harvester:

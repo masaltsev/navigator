@@ -102,7 +102,7 @@ class _MockProvider(WebSearchProvider):
     def engine_name(self):
         return "mock"
 
-    async def search(self, query, *, num_results=10, region="ru-ru"):
+    async def search(self, query, *, num_results=10, region="ru-ru", region_id=None):
         return self._results[:num_results]
 
 

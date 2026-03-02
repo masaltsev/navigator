@@ -124,6 +124,7 @@ class MultiPageCrawler:
             headless=self.headless,
             enable_stealth=True,
             user_agent=get_settings().crawl4ai_user_agent or _USER_AGENT,
+            user_data_dir=get_settings().get_crawl4ai_browser_data_dir(),
         )
 
         main_config = CrawlerRunConfig(
