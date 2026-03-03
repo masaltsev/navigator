@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 _harvester_root = Path(__file__).resolve().parent.parent
@@ -77,13 +77,20 @@ class HarvestResponse(BaseModel):
     message: str = ""
 
 
-def _check_auth(token: str) -> None:
+def _check_auth(authorization: Optional[str]) -> None:
+    """Validate Authorization header (Bearer <token> or plain token)."""
+    token = (authorization or "").strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
     if API_TOKEN and token != API_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid API token")
 
 
 @app.post("/harvest/run", response_model=HarvestResponse)
-async def harvest_run(request: HarvestRunRequest, authorization: str = ""):
+async def harvest_run(
+    request: HarvestRunRequest,
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+):
     """
     Trigger batch harvest: dispatch Celery tasks for each source URL.
 
@@ -136,7 +143,10 @@ async def harvest_run(request: HarvestRunRequest, authorization: str = ""):
 
 
 @app.post("/harvest/events", response_model=HarvestResponse)
-async def harvest_events_endpoint(request: EventHarvestRequest, authorization: str = ""):
+async def harvest_events_endpoint(
+    request: EventHarvestRequest,
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+):
     """
     Trigger event harvesting for organization URLs.
 
@@ -173,7 +183,10 @@ async def harvest_events_endpoint(request: EventHarvestRequest, authorization: s
 
 
 @app.get("/harvest/status/{task_id}")
-async def harvest_status(task_id: str, authorization: str = ""):
+async def harvest_status(
+    task_id: str,
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+):
     """
     Check status of a Celery task or group.
 
