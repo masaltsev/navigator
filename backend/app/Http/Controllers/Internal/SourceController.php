@@ -144,17 +144,22 @@ class SourceController extends Controller
 
             $name = $data['name'] ?? preg_replace('#^https?://#', '', rtrim($baseUrl, '/'));
 
-            $source = Source::create([
+            $crawlPeriodDays = $data['crawl_period_days'] ?? ($kind === 'org_website' ? 30 : 7);
+            $create = [
                 'organizer_id' => $organizerId,
                 'base_url' => $baseUrl,
                 'kind' => $kind,
                 'name' => $name,
                 'priority' => $data['priority'] ?? 50,
-                'crawl_period_days' => $data['crawl_period_days'] ?? 7,
+                'crawl_period_days' => $crawlPeriodDays,
                 'last_status' => 'pending',
                 'is_active' => true,
                 'entry_points' => [],
-            ]);
+            ];
+            if ($kind === 'org_website') {
+                $create['last_crawled_at'] = now();
+            }
+            $source = Source::create($create);
 
             if ($kind === 'org_website') {
                 $this->syncSiteUrls($organizerId, null, $baseUrl);

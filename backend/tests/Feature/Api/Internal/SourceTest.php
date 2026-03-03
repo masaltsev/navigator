@@ -215,7 +215,49 @@ test('POST /api/internal/sources creates source and returns 201', function () {
     $source = Source::find($response->json('source_id'));
     expect($source)->not->toBeNull()
         ->and($source->base_url)->toBe('https://new-source.example.com')
-        ->and($source->kind)->toBe('org_website');
+        ->and($source->kind)->toBe('org_website')
+        ->and($source->last_crawled_at)->not->toBeNull()
+        ->and($source->crawl_period_days)->toBe(30);
+});
+
+test('POST /api/internal/sources accepts explicit crawl_period_days for org_website', function () {
+    $ids = createOrganizationWithOrganizer();
+    if (empty($ids)) {
+        $this->markTestSkipped('Required dictionaries not found');
+    }
+
+    $response = $this->postJson('/api/internal/sources', [
+        'organizer_id' => $ids['organizer_id'],
+        'base_url' => 'https://custom-period.example.com',
+        'kind' => 'org_website',
+        'crawl_period_days' => 14,
+    ], sourceTestHeaders());
+
+    $response->assertCreated();
+    $source = Source::find($response->json('source_id'));
+    expect($source)->not->toBeNull()
+        ->and($source->last_crawled_at)->not->toBeNull()
+        ->and($source->crawl_period_days)->toBe(14);
+});
+
+test('POST /api/internal/sources does not set last_crawled_at for non-org_website kinds', function () {
+    $ids = createOrganizationWithOrganizer();
+    if (empty($ids)) {
+        $this->markTestSkipped('Required dictionaries not found');
+    }
+
+    $response = $this->postJson('/api/internal/sources', [
+        'organizer_id' => $ids['organizer_id'],
+        'base_url' => 'https://vk.com/some_group',
+        'kind' => 'vk_group',
+    ], sourceTestHeaders());
+
+    $response->assertCreated();
+    $source = Source::find($response->json('source_id'));
+    expect($source)->not->toBeNull()
+        ->and($source->kind)->toBe('vk_group')
+        ->and($source->last_crawled_at)->toBeNull()
+        ->and($source->crawl_period_days)->toBe(7);
 });
 
 test('POST /api/internal/sources syncs site_urls when kind is org_website', function () {

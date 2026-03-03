@@ -131,6 +131,8 @@ class CreateOrgWebsiteSourcesFromSiteUrls extends Command
                             'is_active' => true,
                             'last_status' => 'pending',
                             'organizer_id' => $organizer->id,
+                            'crawl_period_days' => 30,
+                            'last_crawled_at' => now(),
                         ]);
                         $created++;
                         if ($this->output->isVerbose()) {
