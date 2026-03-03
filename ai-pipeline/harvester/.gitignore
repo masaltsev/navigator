@@ -5,5 +5,10 @@ __pycache__/
 .crawl4ai/
 data/browser_profile/
 data/playwright_browsers/
-tests/fixtures/batch_raw/
+data/backups/
 data/runs/
+tests/fixtures/batch_raw/
+
+# Merge/IDE duplicate files (e.g. "file 2.py")
+* 2.*
+* 2

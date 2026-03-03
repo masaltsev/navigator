@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Merge/IDE duplicate files (e.g. "file 2.php")
+* 2.*
+* 2
