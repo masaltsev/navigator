@@ -97,17 +97,3 @@ PGPASSWORD=... pg_dump -h 127.0.0.1 -p 5432 -U navigator_core_user -d navigator_
 `-F p` — plain SQL, без проблем восстанавливается через `psql` на pg 15, 16 и т.д.
 
 **Бинарный (custom):** заменить `-F p` на `-F c` и расширение файла на `.dump`; восстанавливать через `pg_restore`. Версия `pg_restore` на сервере должна быть не старше версии `pg_dump`, с которой делали дамп.
-
----
-
-## One-off после наката БД с dev на прод
-
-Если базу на прод накатили из дампа с dev и нужно поправить карточку организации «27.01.2026» (гериатрический центр, gp-centr.astr.socinfo.ru) — название и источник:
-
-```bash
-cd backend
-php artisan one-off:fix-gp-centr-astr-card --dry-run   # проверить
-php artisan one-off:fix-gp-centr-astr-card             # применить
-```
-
-Команда обновит `title`/`short_title` и создаст source для организатора, если его ещё нет. ID организаций на проде совпадают с dev при восстановлении из того же дампа.
