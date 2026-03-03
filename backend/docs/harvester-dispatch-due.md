@@ -18,6 +18,8 @@ HARVESTER_API_TOKEN=your-shared-token
 
 `HARVESTER_API_TOKEN` должен совпадать с тем, что настроен в Harvester (переменная `HARVESTER_API_TOKEN` в `.env` пайплайна), иначе Harvester вернёт 401.
 
+**Локально:** если эти переменные не заданы, `harvest:dispatch-due` без `--dry-run` завершится с ошибкой («must be set in .env»). Цепочка backend → Harvester по due sources работает только при заданных `HARVESTER_URL` и `HARVESTER_API_TOKEN` и при запущенном Harvester API (и при необходимости Redis/Celery). Для проверки списка due без вызова Harvester используйте `php artisan harvest:dispatch-due --dry-run`.
+
 ## Использование
 
 ```bash
@@ -77,15 +79,25 @@ Schedule::command('harvest:dispatch-due', ['--limit' => 100])->daily()->at('02:0
 | Компонент | Где / как запустить |
 |-----------|----------------------|
 | **Redis** | Сервис на порту 6379 (например `docker compose up -d redis` в `ai-pipeline/harvester/` или системный redis). |
-| **Harvester API** | `uvicorn api.harvest_api:app --host 0.0.0.0 --port 8100` из `ai-pipeline/harvester/` (systemd, Docker или другой процесс-менеджер). Должен быть доступен по URL из `HARVESTER_URL` бэкенда. |
+| **Harvester API** | `uvicorn api.harvest_api:app --host 0.0.0.0 --port 8100` из `ai-pipeline/harvester/` (systemd, Docker или другой процесс-менеджер). В стандартном `docker-compose.yml` этого сервиса нет — только redis + harvester-worker (Celery); API нужно запускать отдельно или добавить сервис в compose. |
 | **Celery worker** | `celery -A workers.celery_app worker --loglevel=info --concurrency=4` из `ai-pipeline/harvester/` (тот же Redis по `REDIS_URL`). |
 | **Laravel cron** | В crontab: `* * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1`. |
+
+### Бэкенд и пайплайн на одном сервере
+
+Если и Laravel, и Harvester (API + worker) на одной машине:
+
+- **HARVESTER_URL** — как бэкенд достучится до uvicorn:
+  - API на хосте (systemd, screen) на порту 8100: `http://127.0.0.1:8100` или `http://localhost:8100`;
+  - API в Docker с пробросом `8100:8100`: с хоста то же `http://127.0.0.1:8100`;
+  - бэкенд и API в одной Docker-сети, API — отдельный сервис: `http://<имя-сервиса>:8100`.
+- **HARVESTER_API_TOKEN** — один и тот же в `.env` бэкенда и в `.env` Harvester.
 
 ### Переменные окружения
 
 **Backend (`.env`):**
 
-- `HARVESTER_URL` — базовый URL Harvester API (например `http://harvester:8100` или `https://harvester.example.com`).
+- `HARVESTER_URL` — базовый URL Harvester API (на одном сервере с бэкендом обычно `http://127.0.0.1:8100`; в Docker-сети — `http://harvester-api:8100` и т.п.).
 - `HARVESTER_API_TOKEN` — токен; должен совпадать с `HARVESTER_API_TOKEN` в Harvester.
 
 **Harvester (`.env` в `ai-pipeline/harvester/`):**
