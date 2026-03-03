@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict SLjR6Q5CBTkaXn9vq6NwPcmn1fZ3ZchPhX3ewrVnIX1y8ON3cWcmyofaArJnviX
+\restrict EDqqaHmb1ccxxxyna1KkQXFvDnoXJL5EJTjIqIcS9JtqhSwEKmnqe5estFBEyhm
 
 -- Dumped from database version 18.2 (Homebrew)
 -- Dumped by pg_dump version 18.2 (Homebrew)
@@ -1998,13 +1998,13 @@ ALTER TABLE ONLY public.user_organizer
 -- PostgreSQL database dump complete
 --
 
-\unrestrict SLjR6Q5CBTkaXn9vq6NwPcmn1fZ3ZchPhX3ewrVnIX1y8ON3cWcmyofaArJnviX
+\unrestrict EDqqaHmb1ccxxxyna1KkQXFvDnoXJL5EJTjIqIcS9JtqhSwEKmnqe5estFBEyhm
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict MyxwCK1L3kTgy4G24IZzBI4eh26p6oAvQNrSb9LYBHPOzgJCmtFHrx0v0oEcAbT
+\restrict IZ4yO9X7AphZn75uLL4ktyDWrJLWeKWeq7BI0YumO1gbT5U7jdCmBPDdHc9Ayik
 
 -- Dumped from database version 18.2 (Homebrew)
 -- Dumped by pg_dump version 18.2 (Homebrew)
@@ -2074,6 +2074,7 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 48	2026_02_25_092353_add_short_title_to_organizations	14
 49	2026_02_25_093854_create_suggested_taxonomy_items_table	15
 50	2026_02_26_073726_add_event_page_url_and_support_single_occurrence_to_events	16
+51	2026_03_03_071516_backfill_sources_last_crawled_and_crawl_period	17
 \.
 
 
@@ -2081,12 +2082,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 50, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 51, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict MyxwCK1L3kTgy4G24IZzBI4eh26p6oAvQNrSb9LYBHPOzgJCmtFHrx0v0oEcAbT
+\unrestrict IZ4yO9X7AphZn75uLL4ktyDWrJLWeKWeq7BI0YumO1gbT5U7jdCmBPDdHc9Ayik
 
