@@ -9,6 +9,7 @@ data/backups/
 data/runs/
 tests/fixtures/batch_raw/
 
-# Merge/IDE duplicate files (e.g. "file 2.py")
+# Merge/IDE duplicate files and folders (e.g. "file 2.py", "utils 2/")
 * 2.*
 * 2
+**/* 2/
