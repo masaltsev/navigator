@@ -98,39 +98,6 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
-        /*
-        |--------------------------------------------------------------------------
-        | WordPress Legacy Database Connection
-        |--------------------------------------------------------------------------
-        |
-        | Connection to the legacy WordPress/HivePress MySQL database for
-        | data migration purposes. Used by the navigator:migrate-from-wp-base
-        | command.
-        |
-        | Add these variables to your .env file:
-        | DB_WP_HOST=127.0.0.1
-        | DB_WP_PORT=3306
-        | DB_WP_DATABASE=navigator_wp
-        | DB_WP_USERNAME=navigator_wp_user
-        | DB_WP_PASSWORD=navigator_wp_password
-        |
-        */
-
-        'mysql_wp' => [
-            'driver' => 'mysql',
-            'host' => env('DB_WP_HOST', '127.0.0.1'),
-            'port' => env('DB_WP_PORT', '3306'),
-            'database' => env('DB_WP_DATABASE', 'navigator_wp'),
-            'username' => env('DB_WP_USERNAME', 'navigator_wp_user'),
-            'password' => env('DB_WP_PASSWORD', 'navigator_wp_password'),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => 'wp_',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-        ],
-
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),
