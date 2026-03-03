@@ -324,7 +324,7 @@ def _load(filename: str) -> list[SeederItem]:
 ### 5.1 Переменные окружения (.env)
 ```bash
 # LLM
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
 DEEPSEEK_MODEL=deepseek/deepseek-chat      # LiteLLM prefix
 
 # Navigator Core Internal API

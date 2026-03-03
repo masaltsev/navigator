@@ -3,7 +3,7 @@ Integration test: OrganizationProcessor + real DeepSeek API.
 
 Skipped automatically when DEEPSEEK_API_KEY is not set.
 Run explicitly:
-    DEEPSEEK_API_KEY=sk-... python -m pytest tests/test_integration_deepseek.py -v
+    DEEPSEEK_API_KEY=<key> python -m pytest tests/test_integration_deepseek.py -v
 
 Validates:
   - End-to-end classification of 3 URLs (fixture markdowns)
