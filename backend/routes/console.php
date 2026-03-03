@@ -12,6 +12,7 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 | Harvester: dispatch due sources to crawl (POST /harvest/run)
 |--------------------------------------------------------------------------
-| Uncomment to run daily. Requires HARVESTER_URL and HARVESTER_API_TOKEN.
+| Runs daily at 02:00. Requires HARVESTER_URL and HARVESTER_API_TOKEN in .env.
+| On production ensure cron: * * * * * cd /path/to/backend && php artisan schedule:run
 */
-// Schedule::command('harvest:dispatch-due', ['--limit' => 100])->daily()->at('02:00');
+Schedule::command('harvest:dispatch-due', ['--limit' => 500])->daily()->at('02:00');
