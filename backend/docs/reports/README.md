@@ -18,9 +18,13 @@
 - Область (какие папки/модули проверяли)
 - Источник истины (обычно `docs/Navigator_Core_Model_and_API.md`)
 
-## Текущие отчёты
+## Отчёты
 
-- `2026-02-16__wp-migration-execution-report.md` — выполнение миграции данных из WordPress, статистика, обнаруженные проблемы и рекомендации (commit `da432b9`)
+Date-stamped отчёты перенесены в [archive/reports/](../archive/reports/) перед релизом v1.0. Новые отчёты создавать в этой папке.
+
+## Примеры отчётов (в archive)
+
+- `2026-02-16__wp-migration-execution-report.md` — выполнение миграции данных из WordPress
 - `2026-02-16__api-testing-report.md` — тестирование публичного и внутреннего API, исправление ошибок в трейте `HasUuidPrimaryKey` (commit `a560cd1`)
 - `2026-02-17__architecture-audit.md` — первый аудит согласованности миграций, моделей и API каркаса с архитектурным документом (commit `daefe1a`)
 - `2026-02-27__api-tests-description.md` — описание всех автоматических тестов API (публичный v1 и внутренний internal), по файлам и кейсам (commit `0b951e1`)
