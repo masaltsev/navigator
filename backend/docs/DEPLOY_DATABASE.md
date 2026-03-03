@@ -97,3 +97,5 @@ PGPASSWORD=... pg_dump -h 127.0.0.1 -p 5432 -U navigator_core_user -d navigator_
 `-F p` — plain SQL, без проблем восстанавливается через `psql` на pg 15, 16 и т.д.
 
 **Бинарный (custom):** заменить `-F p` на `-F c` и расширение файла на `.dump`; восстанавливать через `pg_restore`. Версия `pg_restore` на сервере должна быть не старше версии `pg_dump`, с которой делали дамп.
+
+**Swagger / OpenAPI:** спека лежит в репозитории в `backend/docs/openapi.yaml` и отдаётся по `GET /api/documentation/spec`. Страница документации: `/api/documentation`. Если на проде был 404 на `/api/documentation/spec` — убедиться, что в деплое есть файл `docs/openapi.yaml` (он коммитится в репо).

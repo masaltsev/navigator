@@ -1,0 +1,669 @@
+openapi: 3.0.3
+info:
+  title: Navigator Core API
+  description: |
+    Внешний API платформы «Навигатор здорового долголетия». Два контура:
+    - **Публичный (v1)** — для веб-платформы и мини-приложений (VK/OK): организации, мероприятия, без аутентификации.
+    - **Внутренний (internal)** — для AI-пайплайна (Harvester) и модерации: импорт организаций/событий, управление источниками. Требуется Bearer-токен.
+
+    Источник истины по модели: [Navigator_Core_Model_and_API.md](https://github.com/.../docs/Navigator_Core_Model_and_API.md).
+    Стек: Laravel 12, PostgreSQL (PostGIS), Redis. См. docs/2026-02-27__tech-stack-and-logic-overview.md.
+  version: 1.0.0
+  contact:
+    name: Navigator Team
+
+servers:
+  - url: /api
+    description: API base path (relative to app URL)
+
+tags:
+  - name: Public v1 — Organizations
+    description: Публичный каталог организаций (status=approved)
+  - name: Public v1 — Events
+    description: Публичный каталог мероприятий (event_instances)
+  - name: Internal — Import
+    description: Импорт данных от Harvester (AI-пайплайн)
+  - name: Internal — Sources
+    description: Управление источниками для обхода
+
+paths:
+  # ---------- Public v1 ----------
+  /v1/organizations:
+    get:
+      tags: [Public v1 — Organizations]
+      summary: Список организаций
+      description: Одобренные организации с фильтрацией по городу, региону, категориям, типу, услугам, георадиусу.
+      operationId: listOrganizations
+      parameters:
+        - name: city_fias_id
+          in: query
+          description: ФИАС ID города (или массив)
+          schema: { type: string }
+        - name: regioniso
+          in: query
+          description: Код региона ISO (например RU-MOW)
+          schema: { type: string }
+        - name: region_code
+          in: query
+          description: Код региона (LNR, DNR и т.д.)
+          schema: { type: string }
+        - name: thematic_category_id
+          in: query
+          description: Жизненные ситуации (thematic categories)
+          schema: { type: array, items: { type: integer } }
+        - name: organization_type_id
+          in: query
+          description: Типы организаций
+          schema: { type: array, items: { type: integer } }
+        - name: service_id
+          in: query
+          description: Услуги
+          schema: { type: array, items: { type: integer } }
+        - name: lat
+          in: query
+          schema: { type: number, format: float }
+        - name: lng
+          in: query
+          schema: { type: number, format: float }
+        - name: radius_km
+          in: query
+          schema: { type: integer }
+        - name: works_with_elderly
+          in: query
+          schema: { type: boolean, default: true }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 15 }
+      responses:
+        '200':
+          description: Пагинированный список организаций
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/OrganizationListItem' } }
+                  meta:
+                    type: object
+                    properties:
+                      current_page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+
+  /v1/organizations/{id}:
+    get:
+      tags: [Public v1 — Organizations]
+      summary: Детальная карточка организации
+      description: Полная карточка, контакты, площадки, мероприятия, статьи.
+      operationId: showOrganization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Карточка организации
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/OrganizationDetail' }
+        '404':
+          description: Организация не найдена или не approved
+
+  /v1/events:
+    get:
+      tags: [Public v1 — Events]
+      summary: Список мероприятий (экземпляров)
+      description: Материализованные event_instances с фильтрами по времени, формату, гео.
+      operationId: listEvents
+      parameters:
+        - name: time_frame
+          in: query
+          schema: { type: string, enum: [today, tomorrow, this_week, this_month] }
+        - name: attendance_mode
+          in: query
+          schema: { type: string, enum: [offline, online, mixed] }
+        - name: city_fias_id
+          in: query
+          schema: { type: string }
+        - name: regioniso
+          in: query
+          schema: { type: string }
+        - name: region_code
+          in: query
+          schema: { type: string }
+        - name: lat
+          in: query
+          schema: { type: number }
+        - name: lng
+          in: query
+          schema: { type: number }
+        - name: radius_km
+          in: query
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 15 }
+      responses:
+        '200':
+          description: Пагинированный список мероприятий
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/EventInstanceItem' } }
+                  meta:
+                    type: object
+                    properties:
+                      current_page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+
+  # ---------- Internal — Import ----------
+  /internal/import/organizer:
+    post:
+      tags: [Internal — Import]
+      summary: Импорт/обновление организатора
+      description: Принимает JSON от Harvester (deepseek_navigator.py). Дедупликация по source_reference и ИНН. State Machine по ai_metadata.
+      operationId: importOrganizer
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportOrganizerRequest' }
+      responses:
+        '201':
+          description: Успешно создано/обновлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: success }
+                  organizer_id: { type: string, format: uuid }
+                  entity_id: { type: string, format: uuid }
+                  entity_type: { type: string }
+                  assigned_status: { type: string, enum: [approved, pending_review, rejected, draft] }
+        '422':
+          description: Ошибка валидации
+
+  /internal/import/event:
+    post:
+      tags: [Internal — Import]
+      summary: Импорт/обновление события
+      operationId: importEvent
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportEventRequest' }
+      responses:
+        '201':
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  event_id: { type: string, format: uuid }
+                  assigned_status: { type: string }
+                  instances_created: { type: integer }
+        '422':
+          description: Ошибка валидации
+
+  /internal/import/batch:
+    post:
+      tags: [Internal — Import]
+      summary: Пакетный импорт
+      description: Массив сущностей, обработка асинхронно (очередь).
+      operationId: importBatch
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items: { type: array, items: { type: object } }
+      responses:
+        '202':
+          description: Принято в обработку
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: accepted }
+                  job_id: { type: string }
+                  items_count: { type: integer }
+
+  /internal/organizers:
+    get:
+      tags: [Internal — Import]
+      summary: Поиск организатора
+      description: По source_reference, inn или source_id (для Harvester).
+      operationId: lookupOrganizer
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: source_reference
+          in: query
+          schema: { type: string }
+        - name: inn
+          in: query
+          schema: { type: string }
+        - name: source_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Найден организатор
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      organizer_id: { type: string, format: uuid }
+                      entity_type: { type: string }
+                      entity_id: { type: string, format: uuid }
+                      status: { type: string }
+        '404':
+          description: Не найден
+
+  /internal/organizations/without-sources:
+    get:
+      tags: [Internal — Import]
+      summary: Организации без источников
+      description: Одобренные организации без активных источников (для обогащения Harvester).
+      operationId: organizationsWithoutSources
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 100 }
+      responses:
+        '200':
+          description: Пагинированный список
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/OrgWithoutSourceItem' } }
+                  meta:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      last_page: { type: integer }
+
+  # ---------- Internal — Sources ----------
+  /internal/sources:
+    get:
+      tags: [Internal — Sources]
+      summary: Список источников организатора
+      operationId: listSources
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: organizer_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: kind
+          in: query
+          schema: { type: string, enum: [org_website, vk_group, ok_group, tg_channel, registry_fpg, registry_sonko, platform_silverage, event_aggregator, platform_silverage_events, afisha] }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Список источников
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/SourceItem' } }
+        '422':
+          description: Отсутствует organizer_id
+
+    post:
+      tags: [Internal — Sources]
+      summary: Создать источник
+      operationId: createSource
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizer_id, base_url, kind]
+              properties:
+                organizer_id: { type: string, format: uuid }
+                base_url: { type: string }
+                kind: { type: string, enum: [org_website, vk_group, ok_group, tg_channel, registry_fpg, registry_sonko, platform_silverage, event_aggregator, platform_silverage_events, afisha] }
+                name: { type: string }
+                priority: { type: integer }
+                crawl_period_days: { type: integer }
+      responses:
+        '201':
+          description: Создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: created }
+                  source_id: { type: string, format: uuid }
+                  organizer_id: { type: string }
+                  base_url: { type: string }
+                  kind: { type: string }
+        '200':
+          description: Уже существует (status=exists)
+        '422':
+          description: Ошибка валидации
+
+  /internal/sources/due:
+    get:
+      tags: [Internal — Sources]
+      summary: Источники к обходу (due)
+      description: Для Laravel Scheduler и POST /harvest/run. Критерии — is_active, last_crawled_at + crawl_period_days.
+      operationId: listSourcesDue
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100 }
+      responses:
+        '200':
+          description: Список источников для обхода
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        base_url: { type: string }
+                        organizer_id: { type: string }
+                        existing_entity_id: { type: string }
+                        source_item_id: { type: string }
+                        kind: { type: string }
+
+  /internal/sources/{id}:
+    get:
+      tags: [Internal — Sources]
+      summary: Один источник
+      operationId: showSource
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Данные источника
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SourceItem' }
+        '404':
+          description: Не найден
+
+    patch:
+      tags: [Internal — Sources]
+      summary: Обновить источник
+      operationId: updateSource
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base_url: { type: string }
+                name: { type: string }
+                kind: { type: string }
+                last_status: { type: string, enum: [pending, success, error, skipped] }
+                last_crawled_at: { type: string, format: date-time }
+                is_active: { type: boolean }
+      responses:
+        '200':
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: updated }
+                  source_id: { type: string }
+                  old_url: { type: string }
+                  new_url: { type: string }
+        '404':
+          description: Не найден
+        '409':
+          description: Конфликт (дубликат base_url у того же организатора)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+      description: Токен внутреннего API (config internal.api_token)
+
+  schemas:
+    OrganizationListItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, example: Organization }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        organization_types: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        coverage_level: { type: string, nullable: true }
+        venue:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            address: { type: string }
+            coordinates: { type: object, nullable: true }
+        thematic_categories: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        specialist_profiles: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        services: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+
+    OrganizationDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        organization_types: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        ownership_type: { $ref: '#/components/schemas/DictionaryItem' }
+        coverage_level: { $ref: '#/components/schemas/DictionaryItem' }
+        inn: { type: string, nullable: true }
+        ogrn: { type: string, nullable: true }
+        site_urls: { type: array, items: { type: string }, nullable: true }
+        venues: { type: array, items: { $ref: '#/components/schemas/VenueItem' } }
+        thematic_categories: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        specialist_profiles: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        services: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
+        events: { type: array, items: { type: object } }
+        articles: { type: array, items: { type: object } }
+
+    DictionaryItem:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+
+    VenueItem:
+      type: object
+      properties:
+        id: { type: string }
+        address: { type: string }
+        fias_id: { type: string, nullable: true }
+        coordinates: { type: object, nullable: true }
+        is_headquarters: { type: boolean }
+
+    EventInstanceItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        event_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        attendance_mode: { type: string, enum: [offline, online, mixed] }
+        online_url: { type: string, nullable: true }
+        start_datetime: { type: string, format: date-time }
+        end_datetime: { type: string, format: date-time }
+        status: { type: string }
+        venue: { type: object, nullable: true }
+        categories: { type: array }
+        organizer: { type: object }
+
+    OrgWithoutSourceItem:
+      type: object
+      properties:
+        org_id: { type: string, format: uuid }
+        organizer_id: { type: string, format: uuid }
+        title: { type: string }
+        inn: { type: string, nullable: true }
+        region_iso: { type: string, nullable: true }
+        region_code: { type: string, nullable: true }
+        address_raw: { type: string, nullable: true }
+
+    SourceItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        organizer_id: { type: string }
+        name: { type: string }
+        kind: { type: string }
+        base_url: { type: string }
+        last_status: { type: string }
+        is_active: { type: boolean }
+
+    ImportOrganizerRequest:
+      type: object
+      required: [source_reference, entity_type, title, ai_metadata, classification]
+      properties:
+        source_reference: { type: string }
+        entity_type: { type: string, enum: [Organization, InitiativeGroup, Individual] }
+        title: { type: string }
+        short_title: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        inn: { type: string, nullable: true }
+        ogrn: { type: string, nullable: true }
+        ai_metadata:
+          type: object
+          required: [decision, ai_confidence_score, works_with_elderly]
+          properties:
+            decision: { type: string, enum: [accepted, rejected, needs_review] }
+            ai_confidence_score: { type: number, minimum: 0, maximum: 1 }
+            works_with_elderly: { type: boolean }
+            ai_explanation: { type: string, nullable: true }
+            ai_source_trace: { type: array, nullable: true }
+        classification:
+          type: object
+          properties:
+            thematic_category_codes: { type: array, items: { type: string } }
+            service_codes: { type: array, items: { type: string } }
+            organization_type_codes: { type: array, items: { type: string } }
+            specialist_profile_codes: { type: array, items: { type: string } }
+            ownership_type_code: { type: string }
+            coverage_level_id: { type: integer }
+        contacts:
+          type: object
+          properties:
+            phones: { type: array, items: { type: string } }
+            emails: { type: array, items: { type: string } }
+        venues:
+          type: array
+          items:
+            type: object
+            required: [address_raw]
+            properties:
+              address_raw: { type: string }
+              fias_id: { type: string }
+              geo_lat: { type: number }
+              geo_lon: { type: number }
+              is_headquarters: { type: boolean }
+        site_urls: { type: array, items: { type: string } }
+        vk_group_url: { type: string }
+        ok_group_url: { type: string }
+
+    ImportEventRequest:
+      type: object
+      required: [source_reference, organizer_id, title, attendance_mode, ai_metadata]
+      properties:
+        source_reference: { type: string }
+        organizer_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        attendance_mode: { type: string, enum: [offline, online, mixed] }
+        online_url: { type: string, nullable: true }
+        event_page_url: { type: string, nullable: true }
+        rrule_string: { type: string, nullable: true }
+        start_datetime: { type: string, format: date-time, nullable: true }
+        end_datetime: { type: string, format: date-time, nullable: true }
+        ai_metadata:
+          type: object
+          required: [ai_confidence_score]
+          properties:
+            decision: { type: string, enum: [accepted, rejected, needs_review] }
+            ai_confidence_score: { type: number }
+            works_with_elderly: { type: boolean, nullable: true }
+            ai_explanation: { type: string, nullable: true }
+            ai_source_trace: { type: array, nullable: true }
+        classification:
+          type: object
+          properties:
+            event_category_codes: { type: array, items: { type: string } }
+            thematic_category_codes: { type: array, items: { type: string } }
+            target_audience: { type: array, items: { type: string } }
+        venues:
+          type: array
+          items:
+            type: object
+            properties:
+              venue_id: { type: string, format: uuid }
+              address_raw: { type: string }
+              fias_id: { type: string }
+              geo_lat: { type: number }
+              geo_lon: { type: number }
