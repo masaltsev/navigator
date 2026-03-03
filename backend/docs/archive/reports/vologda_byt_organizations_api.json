@@ -1,0 +1,15 @@
+{
+    "meta": {
+        "source": "Navigator Core API (via HTTP)",
+        "filter": {
+            "city": "Вологда",
+            "thematic_root": "Быт и социальная поддержка (code 4)",
+            "thematic_children": [
+                "Нуждаемость в постороннем уходе (18)",
+                "Одинокое проживание (20)"
+            ]
+        },
+        "total": 0
+    },
+    "data": []
+}

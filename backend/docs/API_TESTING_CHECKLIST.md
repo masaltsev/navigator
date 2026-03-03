@@ -6,12 +6,12 @@
 - [ ] Выполнить `php artisan migrate` (или `php artisan migrate:fresh` для чистой БД)
 - [ ] Проверить отсутствие ошибок в выводе
 - [ ] Убедиться, что все таблицы созданы:
-  - [ ] Справочники: `problem_categories`, `services`, `organization_types`, `ownership_types`, `coverage_levels`, `event_categories`, `target_audience`
+  - [ ] Справочники: `thematic_categories`, `services`, `organization_types`, `specialist_profiles`, `ownership_types`, `coverage_levels`, `event_categories`, `target_audience`
   - [ ] Основные сущности: `organizers`, `organizations`, `initiative_groups`, `individuals`
   - [ ] События: `events`, `event_instances`
   - [ ] Площадки: `venues`
   - [ ] Контент: `articles`
-  - [ ] Pivot-таблицы: `organization_problem_categories`, `organization_services`, `event_event_categories`, `organization_venues`, `event_venues`
+  - [ ] Pivot-таблицы: `organization_thematic_categories`, `organization_organization_types`, `organization_specialist_profiles`, `organization_services`, `event_event_categories`, `organization_venues`, `event_venues`
   - [ ] RBAC: `roles`, `role_user`, `user_organizer`
 
 ### 1.2. Проверка структуры таблиц
@@ -22,7 +22,7 @@
 
 ### 1.3. Заполнение тестовыми данными (опционально)
 - [ ] Создать seeders для справочников или заполнить вручную через SQL/Adminer
-- [ ] Проверить, что справочники содержат данные (например, `organization_type_code = "44"`)
+- [ ] Проверить, что справочники содержат данные (например, `organization_types.code = "82"`, `thematic_categories.code = "7"`)
 
 ---
 
@@ -34,16 +34,20 @@
 - [ ] Выполнить запрос без фильтров
 - [ ] Проверить статус 200 OK
 - [ ] Проверить структуру ответа: `data[]`, `meta` (пагинация)
-- [ ] Проверить компактные поля в списке: `id`, `title`, `type`, `venue`, `categories`, `services`
+- [ ] Проверить компактные поля в списке: `id`, `title`, `organization_types`, `venue`, `thematic_categories`, `specialist_profiles`, `services`
 
 #### Фильтр по городу (city_fias_id)
 - [ ] Выполнить запрос с `city_fias_id`
 - [ ] Проверить, что возвращаются только организации с площадками в указанном городе
 
-#### Фильтр по категориям проблем (problem_category_id[])
-- [ ] Выполнить запрос с одним `problem_category_id`
-- [ ] Выполнить запрос с массивом `problem_category_id[]`
-- [ ] Проверить, что возвращаются только организации с указанными категориями
+#### Фильтр по жизненным ситуациям (thematic_category_id[])
+- [ ] Выполнить запрос с одним `thematic_category_id`
+- [ ] Выполнить запрос с массивом `thematic_category_id[]`
+- [ ] Проверить, что возвращаются только организации с указанными тематическими категориями
+
+#### Фильтр по типам организаций (organization_type_id[])
+- [ ] Выполнить запрос с одним или несколькими `organization_type_id[]`
+- [ ] Проверить корректность фильтрации
 
 #### Фильтр по услугам (service_id[])
 - [ ] Выполнить запрос с `service_id[]`
@@ -72,7 +76,7 @@
 - [ ] Проверить полную структуру ответа:
   - [ ] Все поля организации (inn, ogrn, site_urls)
   - [ ] Массив `venues` с полной информацией
-  - [ ] Массивы `categories` и `services`
+  - [ ] Массивы `thematic_categories`, `organization_types`, `specialist_profiles`, `services`
   - [ ] Связанные `events` (если загружены)
   - [ ] Связанные `articles` (если загружены)
 - [ ] Проверить статус 404 для несуществующего UUID
@@ -120,7 +124,7 @@
   - [ ] Создана запись в `organizations`
   - [ ] Создана запись в `organizers` с правильным `organizable_type`
   - [ ] Созданы площадки в `venues` с координатами
-  - [ ] Привязаны `problem_categories` и `services`
+  - [ ] Привязаны `thematic_categories`, `organization_types`, `specialist_profiles`, `services`
   - [ ] Статус соответствует State Machine логике
 
 #### State Machine: Smart Publish (approved)
@@ -217,8 +221,8 @@ curl -X GET "http://localhost/api/v1/organizations" \
 ### 2. GET /api/v1/organizations с фильтром по городу и категории
 
 ```bash
-# Проверяет: фильтрация по city_fias_id и problem_category_id
-curl -X GET "http://localhost/api/v1/organizations?city_fias_id=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&problem_category_id[]=7&problem_category_id[]=12" \
+# Проверяет: фильтрация по city_fias_id и thematic_category_id
+curl -X GET "http://localhost/api/v1/organizations?city_fias_id=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&thematic_category_id[]=7&thematic_category_id[]=12" \
   -H "Accept: application/json"
 ```
 
@@ -234,7 +238,7 @@ curl -X GET "http://localhost/api/v1/organizations?lat=55.7558&lng=37.6173&radiu
 
 ```bash
 # Проверяет: комбинация фильтров по услугам, категориям и георадиусу
-curl -X GET "http://localhost/api/v1/organizations?service_id[]=81&service_id[]=83&problem_category_id[]=7&lat=55.7558&lng=37.6173&radius_km=10&per_page=20" \
+curl -X GET "http://localhost/api/v1/organizations?service_id[]=81&service_id[]=83&thematic_category_id[]=7&lat=55.7558&lng=37.6173&radius_km=10&per_page=20" \
   -H "Accept: application/json"
 ```
 
@@ -297,10 +301,10 @@ curl -X POST "http://localhost/api/internal/import/organizer" \
       ]
     },
     "classification": {
-      "organization_type_code": "44",
+      "organization_type_codes": ["44"],
       "ownership_type_code": "164",
       "coverage_level_id": 2,
-      "problem_category_codes": ["82"],
+      "thematic_category_codes": ["82"],
       "service_codes": ["81", "70"]
     },
     "venues": [
@@ -335,10 +339,10 @@ curl -X POST "http://localhost/api/internal/import/organizer" \
       "ai_explanation": "Подтверждена деятельность в 2024 году на официальном сайте."
     },
     "classification": {
-      "organization_type_code": "174",
+      "organization_type_codes": ["174"],
       "ownership_type_code": "162",
       "coverage_level_id": 2,
-      "problem_category_codes": ["7", "12"],
+      "thematic_category_codes": ["7", "12"],
       "service_codes": ["81", "83"]
     },
     "venues": [
@@ -404,7 +408,7 @@ curl -X POST "http://localhost/api/internal/import/organizer" \
       "ai_explanation": "Организация работает исключительно с детьми, не соответствует критериям."
     },
     "classification": {
-      "organization_type_code": "34"
+      "organization_type_codes": ["34"]
     }
   }'
 ```
@@ -520,7 +524,7 @@ curl -X POST "http://localhost/api/internal/import/batch" \
 
 3. **Справочники**: Убедитесь, что справочники заполнены данными:
    - `organization_types` с кодами "44", "174" и т.д.
-   - `problem_categories` с кодами "7", "12", "82"
+   - `thematic_categories` с кодами "7", "12", "82"
    - `services` с кодами "70", "81", "83"
    - `event_categories` со slug "lecture", "health"
 

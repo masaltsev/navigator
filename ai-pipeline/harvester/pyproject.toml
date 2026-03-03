@@ -1,0 +1,41 @@
+[project]
+name = "navigator-harvester"
+version = "0.1.0"
+description = "Crawl4AI + DeepSeek harvester for Navigator org_website enrichment"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "crawl4ai>=0.8.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "openai>=1.0",
+    "celery[redis]>=5.3",
+    "httpx>=0.27",
+    "tenacity>=8.0",
+    "structlog>=24.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "duckduckgo-search>=7.0",
+    "openpyxl>=3.1",
+    "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "ruff", "mypy"]
+firecrawl = ["firecrawl-py>=1.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["config", "schemas", "strategies", "prompts", "processors", "enrichment", "workers", "core_client", "scripts", "metrics", "api", "search", "aggregators"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

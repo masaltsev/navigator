@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'auth.internal' => \App\Http\Middleware\AuthenticateInternalApi::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -16,11 +16,11 @@ class Article extends Model
     protected $guarded = [];
 
     /**
-     * @return BelongsTo<ProblemCategory, $this>
+     * @return BelongsTo<ThematicCategory, $this>
      */
-    public function relatedProblemCategory(): BelongsTo
+    public function relatedThematicCategory(): BelongsTo
     {
-        return $this->belongsTo(ProblemCategory::class, 'related_problem_category_id');
+        return $this->belongsTo(ThematicCategory::class, 'related_thematic_category_id');
     }
 
     /**

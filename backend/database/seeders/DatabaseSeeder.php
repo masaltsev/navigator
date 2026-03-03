@@ -15,6 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed dictionaries (new names from dictionaries_refactoring.md)
+        $this->call([
+            ThematicCategorySeeder::class,
+            ServiceSeeder::class,
+            OrganizationTypeSeeder::class,
+            OwnershipTypeSeeder::class,
+            SpecialistProfileSeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
         User::factory()->create([
