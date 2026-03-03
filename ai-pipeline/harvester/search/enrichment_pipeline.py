@@ -408,7 +408,9 @@ class EnrichmentPipeline:
             return []
 
     def _merge_dadata_into_harvest(self, harvest_output: dict, party) -> None:
-        """Merge Dadata party (INN, OGRN, address as venue, contacts) into harvest payload."""
+        """Merge Dadata party (INN, OGRN, name, address as venue, contacts) into harvest payload.
+        DaData is the source of truth for organization name when we have a party match.
+        """
         if not harvest_output or not party:
             return
         if not getattr(party, "inn", None) and not getattr(party, "address", None):
@@ -417,6 +419,18 @@ class EnrichmentPipeline:
             harvest_output["inn"] = party.inn
         if not harvest_output.get("ogrn") and party.ogrn:
             harvest_output["ogrn"] = party.ogrn
+        # Always use DaData name as source of truth when we have it
+        name_full = (getattr(party, "name_full", None) or "").strip()
+        name_short = (getattr(party, "name_short", None) or "").strip()
+        dadata_title = name_full or name_short
+        if dadata_title:
+            harvest_output["title"] = dadata_title
+            if name_short and name_short != name_full:
+                harvest_output["short_title"] = name_short
+            logger.debug(
+                "enrichment_dadata_title",
+                title=dadata_title[:60],
+            )
         contacts = harvest_output.get("contacts") or {}
         phones = list(contacts.get("phones") or [])
         emails = list(contacts.get("emails") or [])

@@ -10,17 +10,20 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Enrich organizations via DaData findById/party (suggestion by INN/OGRN).
- * Updates: missing INN/OGRN, organizer contacts (only if empty), related venues (with --force).
+ * DaData is the source of truth for organization name. Updates: title/short_title, missing INN/OGRN,
+ * organizer contacts (only if empty), related venues (with --force).
  */
 class EnrichOrganizationsFromDadata extends Command
 {
     protected $signature = 'organizations:enrich-from-dadata
                             {--limit=0 : Max organizations per run (0 = no limit)}
+                            {--ids= : Comma-separated organization UUIDs; only process these (still requires INN/OGRN for DaData)}
+                            {--title-is-date : Only process orgs whose title looks like DD.MM.YYYY}
                             {--venue-ids= : Comma-separated venue UUIDs; only process orgs that have at least one of these venues}
                             {--force-venues : Overwrite venue address/fias/region from DaData}
                             {--dry-run : Do not save, only show planned updates}';
 
-    protected $description = 'Enrich organizations via DaData findById/party (INN/OGRN); fill missing INN/OGRN, organizer contacts, venue data';
+    protected $description = 'Enrich organizations via DaData findById/party (INN/OGRN); set title from DaData, fill missing INN/OGRN, organizer contacts, venue data';
 
     private const DELAY_MS = 250;
 
@@ -33,6 +36,8 @@ class EnrichOrganizationsFromDadata extends Command
         }
 
         $limit = (int) $this->option('limit');
+        $idsOption = $this->option('ids');
+        $titleIsDateOnly = (bool) $this->option('title-is-date');
         $venueIdsOption = $this->option('venue-ids');
         $forceVenues = (bool) $this->option('force-venues');
         $dryRun = (bool) $this->option('dry-run');
@@ -45,6 +50,17 @@ class EnrichOrganizationsFromDadata extends Command
             })
             ->with(['organizer', 'venues'])
             ->orderBy('id');
+
+        if ($titleIsDateOnly) {
+            $query->whereRaw("title ~ '^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{2,4}$'");
+        }
+
+        if ($idsOption !== null && $idsOption !== '') {
+            $ids = array_filter(array_map('trim', explode(',', $idsOption)));
+            if ($ids !== []) {
+                $query->whereIn('id', $ids);
+            }
+        }
 
         if ($venueIdsOption !== null && $venueIdsOption !== '') {
             $venueIds = array_filter(array_map('trim', explode(',', $venueIdsOption)));
@@ -92,6 +108,31 @@ class EnrichOrganizationsFromDadata extends Command
             }
 
             $changed = false;
+
+            // DaData is source of truth for organization name — always update title/short_title when we have party data
+            $nameFromParty = $this->extractPartyName($data);
+            if ($nameFromParty !== null) {
+                [$newTitle, $newShortTitle] = $nameFromParty;
+                // DB: title varchar(255), short_title varchar(100)
+                if ($newTitle !== null && $newTitle !== '') {
+                    $newTitle = mb_substr($newTitle, 0, 255);
+                    if ($newTitle !== $org->title) {
+                        if (! $dryRun) {
+                            $org->title = $newTitle;
+                        }
+                        $changed = true;
+                    }
+                }
+                if ($newShortTitle !== null && $newShortTitle !== '') {
+                    $newShortTitle = mb_substr($newShortTitle, 0, 100);
+                    if ($newShortTitle !== ($org->short_title ?? '')) {
+                        if (! $dryRun) {
+                            $org->short_title = $newShortTitle;
+                        }
+                        $changed = true;
+                    }
+                }
+            }
 
             // Update organization: missing INN/OGRN (only if not already used by another org)
             $newInn = isset($data['inn']) && is_string($data['inn']) && $data['inn'] !== '' ? trim($data['inn']) : null;
@@ -235,5 +276,27 @@ class EnrichOrganizationsFromDadata extends Command
         $value = $addr['value'] ?? $addr['unrestricted_value'] ?? null;
 
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /**
+     * Extract organization name from DaData party data (source of truth for title).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: string|null, 1: string|null}|null [title, short_title] or null if no name
+     */
+    private function extractPartyName(array $data): ?array
+    {
+        $name = $data['name'] ?? null;
+        if (! is_array($name)) {
+            return null;
+        }
+        $full = isset($name['full_with_opf']) && is_string($name['full_with_opf']) ? trim($name['full_with_opf']) : null;
+        $short = isset($name['short_with_opf']) && is_string($name['short_with_opf']) ? trim($name['short_with_opf']) : null;
+        $title = $full ?: $short;
+        if ($title === null || $title === '') {
+            return null;
+        }
+
+        return [$title, $short !== $title ? $short : null];
     }
 }
