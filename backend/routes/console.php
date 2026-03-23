@@ -15,4 +15,13 @@ Artisan::command('inspire', function () {
 | Runs daily at 02:00. Requires HARVESTER_URL and HARVESTER_API_TOKEN in .env.
 | On production ensure cron: * * * * * cd /path/to/backend && php artisan schedule:run
 */
+/*
+|--------------------------------------------------------------------------
+| Database backup before nightly harvest (rollback safety)
+|--------------------------------------------------------------------------
+| Runs five minutes before harvest. Dumps live under DB_BACKUP_DIRECTORY
+| (default: /home/deploy/backups/navigator), not in git or nginx docroot.
+*/
+Schedule::command('db:backup')->daily()->at('01:55');
+
 Schedule::command('harvest:dispatch-due', ['--limit' => 500])->daily()->at('02:00');

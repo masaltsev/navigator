@@ -2,7 +2,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -10,6 +10,35 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  harvester-api:
+    build:
+      context: .
+      target: worker
+    command:
+      [
+        "uvicorn",
+        "api.harvest_api:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8100",
+      ]
+    ports:
+      - "127.0.0.1:8100:8100"
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CRAWL4AI_HEADLESS=true
+      - PYTHONPATH=/app
+    volumes:
+      - ./seeders_data:/app/seeders_data:ro
+    restart: unless-stopped
 
   harvester-worker:
     build:
@@ -23,6 +52,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - CRAWL4AI_HEADLESS=true
+      - PYTHONPATH=/app
     volumes:
       - ./seeders_data:/app/seeders_data:ro
     restart: unless-stopped
