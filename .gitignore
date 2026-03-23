@@ -3,3 +3,10 @@
 
 # Cursor IDE
 .cursor/
+
+# VSCode
+.vscode/
+*.code-work
+
+# Continue
+.continue/
