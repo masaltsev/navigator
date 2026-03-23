@@ -29,36 +29,36 @@ class DictionaryController extends Controller
      */
     public function index(): JsonResponse
     {
-        return Cache::remember('v1_dictionaries', 3600, function () {
-            return response()->json([
-                'data' => [
-                    'thematic_categories' => ThematicCategory::query()
-                        ->select('id', 'name', 'code', 'parent_id')
-                        ->orderBy('parent_id')
-                        ->orderBy('name')
-                        ->get(),
-                    'services' => Service::query()
-                        ->select('id', 'name', 'code', 'parent_id')
-                        ->orderBy('name')
-                        ->get(),
-                    'organization_types' => OrganizationType::query()
-                        ->select('id', 'name', 'code')
-                        ->orderBy('name')
-                        ->get(),
-                    'specialist_profiles' => SpecialistProfile::query()
-                        ->select('id', 'name', 'code')
-                        ->orderBy('name')
-                        ->get(),
-                    'ownership_types' => OwnershipType::query()
-                        ->select('id', 'name', 'code')
-                        ->orderBy('name')
-                        ->get(),
-                    'event_categories' => EventCategory::query()
-                        ->select('id', 'name', 'code', 'slug', 'icon_url')
-                        ->orderBy('name')
-                        ->get(),
-                ],
-            ]);
+        $data = Cache::remember('v1_dictionaries', 3600, function () {
+            return [
+                'thematic_categories' => ThematicCategory::query()
+                    ->select('id', 'name', 'code', 'parent_id')
+                    ->orderBy('parent_id')
+                    ->orderBy('name')
+                    ->get(),
+                'services' => Service::query()
+                    ->select('id', 'name', 'code', 'parent_id')
+                    ->orderBy('name')
+                    ->get(),
+                'organization_types' => OrganizationType::query()
+                    ->select('id', 'name', 'code')
+                    ->orderBy('name')
+                    ->get(),
+                'specialist_profiles' => SpecialistProfile::query()
+                    ->select('id', 'name', 'code')
+                    ->orderBy('name')
+                    ->get(),
+                'ownership_types' => OwnershipType::query()
+                    ->select('id', 'name', 'code')
+                    ->orderBy('name')
+                    ->get(),
+                'event_categories' => EventCategory::query()
+                    ->select('id', 'name', 'code', 'slug', 'icon_url')
+                    ->orderBy('name')
+                    ->get(),
+            ];
         });
+
+        return response()->json(['data' => $data]);
     }
 }
