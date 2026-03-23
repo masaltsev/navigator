@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\DocumentationController;
+use App\Http\Controllers\Api\V1\ArticleController;
+use App\Http\Controllers\Api\V1\DictionaryController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Internal\ImportController;
@@ -16,6 +18,11 @@ Route::prefix('v1')->group(function () {
     Route::get('/organizations/{id}', [OrganizationController::class, 'show']);
 
     Route::get('/events', [EventController::class, 'index']);
+
+    Route::get('/dictionaries', [DictionaryController::class, 'index']);
+
+    Route::get('/articles', [ArticleController::class, 'index']);
+    Route::get('/articles/{slug}', [ArticleController::class, 'show']);
 });
 
 Route::prefix('internal')->middleware('auth.internal')->group(function () {

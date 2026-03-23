@@ -14,13 +14,16 @@ class OrganizationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // Compact list view (for index)
-        if ($request->routeIs('*.index')) {
+        $primaryPhone = $this->organizer?->contact_phones[0] ?? null;
+        $isListView = $request->route()?->getActionMethod() === 'index';
+
+        if ($isListView) {
             return [
                 'id' => $this->id,
                 'type' => 'Organization',
                 'title' => $this->title,
                 'description' => $this->description ? mb_substr($this->description, 0, 150).'...' : null,
+                'primary_phone' => $primaryPhone,
                 'organization_types' => $this->organizationTypes->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
                 'coverage_level' => $this->coverageLevel?->name,
                 'venue' => $this->when(
@@ -31,7 +34,7 @@ class OrganizationResource extends JsonResource
                         return [
                             'id' => $venue->id,
                             'address' => $venue->address_raw,
-                            'coordinates' => $this->extractCoordinates($venue->coordinates),
+                            'coordinates' => $venue->coordinates_array,
                         ];
                     }
                 ),
@@ -47,12 +50,12 @@ class OrganizationResource extends JsonResource
             ];
         }
 
-        // Full detail view (for show)
         return [
             'id' => $this->id,
             'type' => 'Organization',
             'title' => $this->title,
             'description' => $this->description,
+            'primary_phone' => $primaryPhone,
             'organization_types' => $this->organizationTypes->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
             'ownership_type' => [
                 'id' => $this->ownershipType?->id,
@@ -70,7 +73,7 @@ class OrganizationResource extends JsonResource
                     'id' => $venue->id,
                     'address' => $venue->address_raw,
                     'fias_id' => $venue->fias_id,
-                    'coordinates' => $this->extractCoordinates($venue->coordinates),
+                    'coordinates' => $venue->coordinates_array,
                     'is_headquarters' => $venue->pivot->is_headquarters ?? false,
                 ];
             }),
@@ -102,26 +105,5 @@ class OrganizationResource extends JsonResource
                 ])
             ),
         ];
-    }
-
-    /**
-     * Extract coordinates from PostGIS geometry point.
-     * Returns null if coordinates are not available or not loaded.
-     */
-    private function extractCoordinates($coordinates): ?array
-    {
-        if (! $coordinates) {
-            return null;
-        }
-
-        // If coordinates is already an array (from cast), return it
-        if (is_array($coordinates)) {
-            return $coordinates;
-        }
-
-        // For PostGIS geometry, we'd typically use raw SQL to extract lat/lng
-        // This is a placeholder - in production, you'd use a PostGIS accessor or raw query
-        // Example: DB::selectOne("SELECT ST_X(coordinates) as lng, ST_Y(coordinates) as lat FROM venues WHERE id = ?", [$venue->id])
-        return null;
     }
 }

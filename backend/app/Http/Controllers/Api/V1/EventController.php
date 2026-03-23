@@ -17,6 +17,8 @@ class EventController extends Controller
      * Filters:
      * - time_frame: today, tomorrow, this_week, this_month
      * - attendance_mode: offline, online, mixed
+     * - event_category_id[]: filter by event category IDs
+     * - event_category_slug[]: filter by event category slugs
      * - city_fias_id or city_fias_id[]: filter by city (level 4); matches venue.city_fias_id, fallback to venue.fias_id when city_fias_id empty
      * - regioniso: filter by region ISO code (e.g., RU-MOW)
      * - region_code: filter by region code for new regions without ISO (LNR, DNR, Kherson, Zaporozhye)
@@ -77,6 +79,22 @@ class EventController extends Controller
         if ($request->filled('attendance_mode')) {
             $query->whereHas('event', function ($q) use ($request) {
                 $q->where('attendance_mode', $request->input('attendance_mode'));
+            });
+        }
+
+        // Filter by event category ID
+        if ($request->filled('event_category_id')) {
+            $categoryIds = (array) $request->input('event_category_id');
+            $query->whereHas('event.categories', function ($q) use ($categoryIds) {
+                $q->whereIn('event_categories.id', $categoryIds);
+            });
+        }
+
+        // Filter by event category slug
+        if ($request->filled('event_category_slug')) {
+            $categorySlugs = (array) $request->input('event_category_slug');
+            $query->whereHas('event.categories', function ($q) use ($categorySlugs) {
+                $q->whereIn('event_categories.slug', $categorySlugs);
             });
         }
 
