@@ -43,4 +43,23 @@ class Venue extends Model
     {
         return [];
     }
+
+    /**
+     * Extract coordinates from PostGIS geometry point as array.
+     * Returns null if coordinates are not available.
+     */
+    public function getCoordinatesArrayAttribute(): ?array
+    {
+        if (! ($this->attributes['coordinates'] ?? null)) {
+            return null;
+        }
+
+        // Use raw SQL to extract lat/lng from PostGIS geometry
+        $point = \DB::selectOne(
+            'SELECT ST_X(coordinates::geometry) as lng, ST_Y(coordinates::geometry) as lat FROM venues WHERE id = ?',
+            [$this->id]
+        );
+
+        return $point ? ['lat' => (float) $point->lat, 'lng' => (float) $point->lng] : null;
+    }
 }

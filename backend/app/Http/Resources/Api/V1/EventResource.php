@@ -45,7 +45,7 @@ class EventResource extends JsonResource
                     return [
                         'id' => $venue->id,
                         'address' => $venue->address_raw,
-                        'coordinates' => $this->extractCoordinates($venue->coordinates),
+                        'coordinates' => $venue->coordinates_array,
                     ];
                 }
             ),

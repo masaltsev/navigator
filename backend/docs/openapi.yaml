@@ -21,6 +21,10 @@ tags:
     description: Публичный каталог организаций (status=approved)
   - name: Public v1 — Events
     description: Публичный каталог мероприятий (event_instances)
+  - name: Public v1 — Dictionaries
+    description: Справочники для фронтенда (категории, типы, услуги)
+  - name: Public v1 — Articles
+    description: Статьи и полезные материалы
   - name: Internal — Import
     description: Импорт данных от Harvester (AI-пайплайн)
   - name: Internal — Sources
@@ -130,6 +134,14 @@ paths:
         - name: attendance_mode
           in: query
           schema: { type: string, enum: [offline, online, mixed] }
+        - name: event_category_id
+          in: query
+          description: Фильтр по ID категорий мероприятий (массив)
+          schema: { type: array, items: { type: integer } }
+        - name: event_category_slug
+          in: query
+          description: Фильтр по slug категорий мероприятий (массив)
+          schema: { type: array, items: { type: string } }
         - name: city_fias_id
           in: query
           schema: { type: string }
@@ -169,6 +181,141 @@ paths:
                       current_page: { type: integer }
                       per_page: { type: integer }
                       total: { type: integer }
+
+  /v1/dictionaries:
+    get:
+      tags: [Public v1 — Dictionaries]
+      summary: Все справочники в одном запросе
+      description: Возвращает все активные справочники для фронтенда (категории, типы, услуги). Кэшируется на 1 час.
+      operationId: listDictionaries
+      responses:
+        '200':
+          description: Все справочники
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      thematic_categories:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string }
+                            parent_id: { type: integer, nullable: true }
+                      services:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string }
+                            parent_id: { type: integer, nullable: true }
+                      organization_types:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string }
+                      specialist_profiles:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string }
+                      ownership_types:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string }
+                      event_categories:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            code: { type: string, nullable: true }
+                            slug: { type: string }
+                            icon_url: { type: string, nullable: true }
+
+  /v1/articles:
+    get:
+      tags: [Public v1 — Articles]
+      summary: Список опубликованных статей
+      description: Пагинированный список статей с фильтрами по категории, услуге, организации.
+      operationId: listArticles
+      parameters:
+        - name: thematic_category_id
+          in: query
+          schema: { type: integer }
+          description: Фильтр по тематической категории
+        - name: service_id
+          in: query
+          schema: { type: integer }
+          description: Фильтр по услуге
+        - name: organization_id
+          in: query
+          schema: { type: string, format: uuid }
+          description: Фильтр по организации
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Пагинированный список статей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ArticleListItem' } }
+                  meta:
+                    type: object
+                    properties:
+                      current_page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+
+  /v1/articles/{slug}:
+    get:
+      tags: [Public v1 — Articles]
+      summary: Детальная статья по slug
+      description: Полная статья с контентом
+      operationId: showArticle
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Детальная статья
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ArticleDetail' }
+        '404':
+          description: Статья не найдена или не опубликована
 
   # ---------- Internal — Import ----------
   /internal/import/organizer:
@@ -493,6 +640,7 @@ components:
         type: { type: string, example: Organization }
         title: { type: string }
         description: { type: string, nullable: true }
+        primary_phone: { type: string, nullable: true, description: "Первый контактный телефон из organizer.contact_phones" }
         organization_types: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
         coverage_level: { type: string, nullable: true }
         venue:
@@ -501,7 +649,12 @@ components:
           properties:
             id: { type: string }
             address: { type: string }
-            coordinates: { type: object, nullable: true }
+            coordinates: 
+              type: object
+              nullable: true
+              properties:
+                lat: { type: number, format: float }
+                lng: { type: number, format: float }
         thematic_categories: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
         specialist_profiles: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
         services: { type: array, items: { $ref: '#/components/schemas/DictionaryItem' } }
@@ -538,7 +691,12 @@ components:
         id: { type: string }
         address: { type: string }
         fias_id: { type: string, nullable: true }
-        coordinates: { type: object, nullable: true }
+        coordinates: 
+          type: object
+          nullable: true
+          properties:
+            lat: { type: number, format: float }
+            lng: { type: number, format: float }
         is_headquarters: { type: boolean }
 
     EventInstanceItem:
@@ -567,6 +725,52 @@ components:
         region_iso: { type: string, nullable: true }
         region_code: { type: string, nullable: true }
         address_raw: { type: string, nullable: true }
+
+    ArticleListItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string, nullable: true }
+        featured_image_url: { type: string, nullable: true }
+        published_at: { type: string, format: date-time, nullable: true }
+        related_thematic_category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        organization:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            title: { type: string }
+
+    ArticleDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string, nullable: true }
+        content: { type: string, nullable: true }
+        content_url: { type: string, nullable: true }
+        featured_image_url: { type: string, nullable: true }
+        published_at: { type: string, format: date-time, nullable: true }
+        related_thematic_category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        organization:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            title: { type: string }
 
     SourceItem:
       type: object

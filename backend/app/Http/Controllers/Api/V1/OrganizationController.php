@@ -34,6 +34,7 @@ class OrganizationController extends Controller
                 'thematicCategories:id,name',
                 'specialistProfiles:id,name',
                 'services:id,name',
+                'organizer:id,organizable_type,organizable_id,contact_phones',
                 'venues' => function ($q) {
                     $q->select(
                         'venues.id',
@@ -163,6 +164,7 @@ class OrganizationController extends Controller
                 'specialistProfiles',
                 'services',
                 'venues',
+                'organizer',
                 'events' => function ($q) {
                     $q->where('status', 'approved')
                         ->with(['categories', 'venues'])
