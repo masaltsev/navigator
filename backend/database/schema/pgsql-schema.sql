@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict EDqqaHmb1ccxxxyna1KkQXFvDnoXJL5EJTjIqIcS9JtqhSwEKmnqe5estFBEyhm
+\restrict HUZKAfLn3a1kwsWS3xgT18c1ACFbOK1td6mabFMPxBcJB97wX7RsfT52LHGkByS
 
 -- Dumped from database version 18.2 (Homebrew)
 -- Dumped by pg_dump version 18.2 (Homebrew)
@@ -57,7 +57,7 @@ CREATE TABLE public.articles (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
-    CONSTRAINT articles_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying])::text[])))
+    CONSTRAINT articles_status_check CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('published'::character varying)::text, ('archived'::character varying)::text])))
 );
 
 
@@ -173,7 +173,7 @@ CREATE TABLE public.event_instances (
     status character varying(255) NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT event_instances_status_check CHECK (((status)::text = ANY ((ARRAY['scheduled'::character varying, 'cancelled'::character varying, 'rescheduled'::character varying, 'finished'::character varying])::text[])))
+    CONSTRAINT event_instances_status_check CHECK (((status)::text = ANY (ARRAY[('scheduled'::character varying)::text, ('cancelled'::character varying)::text, ('rescheduled'::character varying)::text, ('finished'::character varying)::text])))
 );
 
 
@@ -212,7 +212,7 @@ CREATE TABLE public.events (
     deleted_at timestamp(0) without time zone,
     source_reference character varying(255),
     event_page_url character varying(255),
-    CONSTRAINT events_attendance_mode_check CHECK (((attendance_mode)::text = ANY ((ARRAY['offline'::character varying, 'online'::character varying, 'mixed'::character varying])::text[])))
+    CONSTRAINT events_attendance_mode_check CHECK (((attendance_mode)::text = ANY (ARRAY[('offline'::character varying)::text, ('online'::character varying)::text, ('mixed'::character varying)::text])))
 );
 
 
@@ -486,7 +486,9 @@ CREATE TABLE public.organizations (
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
     source_reference character varying(255),
-    short_title character varying(100)
+    short_title character varying(100),
+    verified_fields jsonb,
+    content_hash character varying(32)
 );
 
 
@@ -1998,13 +2000,13 @@ ALTER TABLE ONLY public.user_organizer
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EDqqaHmb1ccxxxyna1KkQXFvDnoXJL5EJTjIqIcS9JtqhSwEKmnqe5estFBEyhm
+\unrestrict HUZKAfLn3a1kwsWS3xgT18c1ACFbOK1td6mabFMPxBcJB97wX7RsfT52LHGkByS
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict IZ4yO9X7AphZn75uLL4ktyDWrJLWeKWeq7BI0YumO1gbT5U7jdCmBPDdHc9Ayik
+\restrict sUqYLMfjQJ2w5P6Eio3fQbnT1FJabl8CoB85Ja5Y3tAxLH8kTdZzV18tARXKNlR
 
 -- Dumped from database version 18.2 (Homebrew)
 -- Dumped by pg_dump version 18.2 (Homebrew)
@@ -2075,6 +2077,7 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 49	2026_02_25_093854_create_suggested_taxonomy_items_table	15
 50	2026_02_26_073726_add_event_page_url_and_support_single_occurrence_to_events	16
 51	2026_03_03_071516_backfill_sources_last_crawled_and_crawl_period	17
+52	2026_03_25_101315_add_verified_fields_to_organizations	18
 \.
 
 
@@ -2082,12 +2085,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 51, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 52, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict IZ4yO9X7AphZn75uLL4ktyDWrJLWeKWeq7BI0YumO1gbT5U7jdCmBPDdHc9Ayik
+\unrestrict sUqYLMfjQJ2w5P6Eio3fQbnT1FJabl8CoB85Ja5Y3tAxLH8kTdZzV18tARXKNlR
 

@@ -6,6 +6,8 @@
 existing_entity_id, полученного от Harvester до вызова LLM.
 """
 
+import hashlib
+import json
 from typing import Callable, Optional
 
 import structlog
@@ -234,6 +236,9 @@ def to_core_import_payload(
 
     If geo_results are provided (from DadataClient), venues are enriched
     with fias_id, geo_lat, geo_lon. The list must be parallel to org.venues.
+
+    Null-safety: empty inn/ogrn/short_title are omitted to prevent
+    overwriting existing non-empty values in Core.
     """
     venues = []
     for i, v in enumerate(org.venues):
@@ -245,19 +250,26 @@ def to_core_import_payload(
             geo = geo_results[i]
             if geo.fias_id:
                 venue_data["fias_id"] = geo.fias_id
+            if geo.fias_level:
+                venue_data["fias_level"] = geo.fias_level
+            if geo.city_fias_id:
+                venue_data["city_fias_id"] = geo.city_fias_id
+            if geo.region_iso:
+                venue_data["region_iso"] = geo.region_iso
+            if geo.region_code:
+                venue_data["region_code"] = geo.region_code
+            if geo.kladr_id:
+                venue_data["kladr_id"] = geo.kladr_id
             if geo.geo_lat is not None and geo.geo_lon is not None:
                 venue_data["geo_lat"] = geo.geo_lat
                 venue_data["geo_lon"] = geo.geo_lon
         venues.append(venue_data)
 
-    return {
+    payload: dict = {
         "source_reference": org.source_reference,
         "entity_type": "Organization",
         "title": org.title,
-        "short_title": org.short_title,
         "description": org.description,
-        "inn": org.inn,
-        "ogrn": org.ogrn,
         "ai_metadata": {
             "decision": org.ai_metadata.decision,
             "ai_explanation": org.ai_metadata.ai_explanation,
@@ -283,3 +295,29 @@ def to_core_import_payload(
         "target_audience": org.target_audience,
         "suggested_taxonomy": [s.model_dump() for s in org.suggested_taxonomy],
     }
+
+    if org.inn:
+        payload["inn"] = org.inn
+    if org.ogrn:
+        payload["ogrn"] = org.ogrn
+    if org.short_title:
+        payload["short_title"] = org.short_title
+
+    payload["content_hash"] = _compute_content_hash(payload)
+
+    return payload
+
+
+def _compute_content_hash(payload: dict) -> str:
+    """Compute a short hash of key payload fields for idempotency checks."""
+    hash_input = json.dumps(
+        {
+            "title": payload.get("title", ""),
+            "description": payload.get("description", ""),
+            "inn": payload.get("inn"),
+            "classification": payload.get("classification", {}),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(hash_input.encode()).hexdigest()[:16]

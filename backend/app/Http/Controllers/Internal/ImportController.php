@@ -16,6 +16,7 @@ use App\Models\SpecialistProfile;
 use App\Models\SuggestedTaxonomyItem;
 use App\Models\ThematicCategory;
 use App\Models\Venue;
+use App\Services\Import\ImportMergeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,8 @@ use Illuminate\Validation\ValidationException;
 
 class ImportController extends Controller
 {
+    public function __construct(private ImportMergeService $mergeService) {}
+
     /**
      * Import or update an organizer (Organization, InitiativeGroup, or Individual).
      */
@@ -79,6 +82,8 @@ class ImportController extends Controller
             'venues.*.geo_lon' => 'nullable|numeric',
             'venues.*.address_comment' => 'nullable|string|max:500',
             'venues.*.is_headquarters' => 'nullable|boolean',
+            'verified_fields' => 'nullable|array',
+            'content_hash' => 'nullable|string|max:32',
         ]);
 
         if ($validator->fails()) {
@@ -90,22 +95,32 @@ class ImportController extends Controller
         $classification = $data['classification'];
 
         return DB::transaction(function () use ($data, $aiMetadata, $classification) {
-            $status = $this->determineStatus($aiMetadata);
+            $isUpdate = false;
+            $currentStatus = null;
+
+            if ($data['entity_type'] === 'Organization') {
+                $existing = $this->findExistingOrganization($data['source_reference'], $data['inn'] ?? null);
+                $isUpdate = $existing !== null;
+                $currentStatus = $existing?->status;
+            }
+
+            $rawStatus = $this->determineStatus($aiMetadata);
+            $status = $this->mergeService->resolveStatus($rawStatus, $currentStatus);
 
             $entity = match ($data['entity_type']) {
-                'Organization' => $this->createOrUpdateOrganization($data, $classification, $aiMetadata, $status),
+                'Organization' => $this->createOrUpdateOrganization($data, $classification, $aiMetadata, $status, $existing ?? null),
                 'InitiativeGroup' => $this->createOrUpdateInitiativeGroup($data, $aiMetadata, $status),
                 'Individual' => $this->createOrUpdateIndividual($data, $aiMetadata, $status),
             };
 
-            $organizer = $this->createOrUpdateOrganizer($entity, $data, $aiMetadata, $status);
+            $organizer = $this->createOrUpdateOrganizer($entity, $data, $aiMetadata, $status, $isUpdate);
 
             if (! empty($data['venues'])) {
                 $this->processVenues($organizer, $data['venues'], $data['entity_type'] === 'Organization');
             }
 
             if ($data['entity_type'] === 'Organization') {
-                $this->syncClassification($entity, $classification);
+                $this->syncClassification($entity, $classification, $isUpdate);
 
                 if (! empty($data['suggested_taxonomy'])) {
                     $this->storeSuggestedTaxonomy($entity, $data['suggested_taxonomy'], $data['source_reference']);
@@ -281,17 +296,12 @@ class ImportController extends Controller
         return 'draft';
     }
 
-    /**
-     * Deduplication strategy (fallback chain):
-     * 1. source_reference (unique per AI pipeline run)
-     * 2. inn (if non-null — legal entity match)
-     * 3. title (fuzzy last resort — may be refined later)
-     */
     private function createOrUpdateOrganization(
         array $data,
         array $classification,
         array $aiMetadata,
-        string $status
+        string $status,
+        ?Organization $existing = null,
     ): Organization {
         $ownershipType = null;
         if (! empty($classification['ownership_type_code'])) {
@@ -322,13 +332,30 @@ class ImportController extends Controller
             'status' => $status,
         ];
 
-        $existing = $this->findExistingOrganization($data['source_reference'], $data['inn'] ?? null);
-
         if ($existing) {
+            $incomingContentHash = $data['content_hash'] ?? null;
+            if ($incomingContentHash && $existing->content_hash === $incomingContentHash) {
+                return $existing;
+            }
+
+            $incomingVerified = $data['verified_fields'] ?? [];
+            $attributes = $this->mergeService->mergeAttributes(
+                $existing,
+                $attributes,
+                incomingVerified: $incomingVerified,
+            );
+
+            if ($incomingContentHash) {
+                $attributes['content_hash'] = $incomingContentHash;
+            }
+
             $existing->update($attributes);
 
             return $existing;
         }
+
+        $attributes['verified_fields'] = $data['verified_fields'] ?? null;
+        $attributes['content_hash'] = $data['content_hash'] ?? null;
 
         return Organization::create($attributes);
     }
@@ -385,9 +412,26 @@ class ImportController extends Controller
         $entity,
         array $data,
         array $aiMetadata,
-        string $status
+        string $status,
+        bool $isUpdate = false,
     ): Organizer {
         $contacts = $data['contacts'] ?? [];
+        $incomingPhones = ! empty($contacts['phones']) ? $contacts['phones'] : null;
+        $incomingEmails = ! empty($contacts['emails']) ? $contacts['emails'] : null;
+
+        $existing = Organizer::where('organizable_type', $entity->getMorphClass())
+            ->where('organizable_id', $entity->id)
+            ->first();
+
+        if ($existing && $isUpdate) {
+            $existing->update([
+                'contact_phones' => $this->mergeService->mergeContactList($existing->contact_phones, $incomingPhones),
+                'contact_emails' => $this->mergeService->mergeContactList($existing->contact_emails, $incomingEmails),
+                'status' => $status,
+            ]);
+
+            return $existing;
+        }
 
         return Organizer::updateOrCreate(
             [
@@ -395,20 +439,19 @@ class ImportController extends Controller
                 'organizable_id' => $entity->id,
             ],
             [
-                'contact_phones' => ! empty($contacts['phones']) ? $contacts['phones'] : null,
-                'contact_emails' => ! empty($contacts['emails']) ? $contacts['emails'] : null,
+                'contact_phones' => $incomingPhones,
+                'contact_emails' => $incomingEmails,
                 'status' => $status,
             ]
         );
     }
 
     /**
-     * Create or match venues and attach to organization.
-     * Now persists fias_level, city_fias_id, region_iso, region_code, kladr_id from Harvester.
+     * Attach venues to organization with protection for Dadata-verified venues.
      *
-     * If the organization already has venues attached, we skip adding from payload to avoid
-     * duplicates from LLM (existing venues are assumed verified/Dadata-linked). New orgs get
-     * venues from the import payload (with optional Dadata geo).
+     * - New orgs: attach all incoming venues
+     * - Existing orgs: only add venues with fias_id that don't already exist;
+     *   never remove venues that have fias_id (Dadata-verified)
      */
     private function processVenues(Organizer $organizer, array $venues, bool $isOrganization): void
     {
@@ -417,7 +460,25 @@ class ImportController extends Controller
         }
 
         $org = $organizer->organizable;
-        if ($org->venues()->exists()) {
+        $hasExistingVenues = $org->venues()->exists();
+
+        if ($hasExistingVenues) {
+            $existingFiasIds = $org->venues()->whereNotNull('fias_id')->pluck('fias_id')->toArray();
+
+            foreach ($venues as $venueData) {
+                $fiasId = $venueData['fias_id'] ?? null;
+                if (! $fiasId || in_array($fiasId, $existingFiasIds, true)) {
+                    continue;
+                }
+
+                $venue = $this->resolveVenue($venueData);
+                $org->venues()->syncWithoutDetaching([
+                    $venue->id => [
+                        'is_headquarters' => $venueData['is_headquarters'] ?? false,
+                    ],
+                ]);
+            }
+
             return;
         }
 
@@ -535,26 +596,34 @@ class ImportController extends Controller
         }
     }
 
-    private function syncClassification(Organization $entity, array $classification): void
+    /**
+     * Sync classification relationships.
+     *
+     * On create: replace (sync) — set from scratch.
+     * On update: additive (syncWithoutDetaching) — don't remove existing codes.
+     */
+    private function syncClassification(Organization $entity, array $classification, bool $isUpdate = false): void
     {
+        $method = $isUpdate ? 'syncWithoutDetaching' : 'sync';
+
         if (! empty($classification['thematic_category_codes'])) {
             $ids = ThematicCategory::whereIn('code', $classification['thematic_category_codes'])->pluck('id');
-            $entity->thematicCategories()->sync($ids);
+            $entity->thematicCategories()->{$method}($ids);
         }
 
         if (! empty($classification['organization_type_codes'])) {
             $ids = OrganizationType::whereIn('code', $classification['organization_type_codes'])->pluck('id');
-            $entity->organizationTypes()->sync($ids);
+            $entity->organizationTypes()->{$method}($ids);
         }
 
         if (! empty($classification['specialist_profile_codes'])) {
             $ids = SpecialistProfile::whereIn('code', $classification['specialist_profile_codes'])->pluck('id');
-            $entity->specialistProfiles()->sync($ids);
+            $entity->specialistProfiles()->{$method}($ids);
         }
 
         if (! empty($classification['service_codes'])) {
             $ids = Service::whereIn('code', $classification['service_codes'])->pluck('id');
-            $entity->services()->sync($ids);
+            $entity->services()->{$method}($ids);
         }
     }
 
