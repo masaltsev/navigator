@@ -184,13 +184,13 @@ class TestNullableFields:
     def test_no_inn_ogrn(self):
         org = _make_org_output(inn=None, ogrn=None)
         payload = to_core_import_payload(org)
-        assert payload["inn"] is None
-        assert payload["ogrn"] is None
+        assert "inn" not in payload
+        assert "ogrn" not in payload
 
     def test_no_short_title(self):
         org = _make_org_output(short_title=None)
         payload = to_core_import_payload(org)
-        assert payload["short_title"] is None
+        assert "short_title" not in payload
 
     def test_empty_venues(self):
         org = _make_org_output(venues=[])

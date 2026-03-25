@@ -117,6 +117,7 @@ class Organization extends Model
             'target_audience' => 'array',
             'vk_group_id' => 'integer',
             'ok_group_id' => 'integer',
+            'verified_fields' => 'array',
         ];
     }
 }

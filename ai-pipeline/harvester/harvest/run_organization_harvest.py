@@ -51,6 +51,7 @@ async def run_organization_harvest(
     existing_entity_id: Optional[str] = None,
     multi_page: bool = True,
     enrich_geo: bool = True,
+    enrich_party: bool = True,
     additional_context: str = "",
     source_kind: str = "org_website",
     try_site_extractor: bool = False,
@@ -156,20 +157,41 @@ async def run_organization_harvest(
 
     result = processor.process(harvest_input)
 
-    geo_results = None
-    if enrich_geo and result.venues:
-        from enrichment.dadata_client import DadataClient
+    from enrichment.dadata_client import DadataClient
 
-        dadata = DadataClient(
-            api_key=settings.dadata_api_key,
-            secret_key=settings.dadata_secret_key,
-            use_clean=settings.dadata_use_clean,
-        )
-        if dadata.enabled:
-            addresses = [v.address_raw for v in result.venues]
-            geo_results = await dadata.geocode_batch(addresses)
+    dadata = DadataClient(
+        api_key=settings.dadata_api_key,
+        secret_key=settings.dadata_secret_key,
+        use_clean=settings.dadata_use_clean,
+    )
+
+    geo_results = None
+    if enrich_geo and result.venues and dadata.enabled:
+        addresses = [v.address_raw for v in result.venues]
+        geo_results = await dadata.geocode_batch(addresses)
 
     payload = to_core_import_payload(result, geo_results=geo_results)
+
+    verified_fields: dict[str, str] = {}
+    if enrich_party and dadata.enabled:
+        from enrichment.dadata_merge import merge_dadata_into_payload
+
+        party = None
+        if result.inn:
+            party_result = await dadata.find_party_by_id(result.inn)
+            if party_result.found:
+                party = party_result
+        if not party and result.title:
+            parties = await dadata.suggest_party(result.title.strip(), count=1)
+            if parties and parties[0].found:
+                party = parties[0]
+
+        if party:
+            verified_fields = merge_dadata_into_payload(payload, party)
+
+    if verified_fields:
+        payload["verified_fields"] = verified_fields
+
     llm_metrics = client.get_metrics() if hasattr(client, "get_metrics") else {}
 
     return {

@@ -408,63 +408,10 @@ class EnrichmentPipeline:
             return []
 
     def _merge_dadata_into_harvest(self, harvest_output: dict, party) -> None:
-        """Merge Dadata party (INN, OGRN, name, address as venue, contacts) into harvest payload.
-        DaData is the source of truth for organization name when we have a party match.
-        """
-        if not harvest_output or not party:
-            return
-        if not getattr(party, "inn", None) and not getattr(party, "address", None):
-            return
-        if not harvest_output.get("inn") and party.inn:
-            harvest_output["inn"] = party.inn
-        if not harvest_output.get("ogrn") and party.ogrn:
-            harvest_output["ogrn"] = party.ogrn
-        # Always use DaData name as source of truth when we have it
-        name_full = (getattr(party, "name_full", None) or "").strip()
-        name_short = (getattr(party, "name_short", None) or "").strip()
-        dadata_title = name_full or name_short
-        if dadata_title:
-            harvest_output["title"] = dadata_title
-            if name_short and name_short != name_full:
-                harvest_output["short_title"] = name_short
-            logger.debug(
-                "enrichment_dadata_title",
-                title=dadata_title[:60],
-            )
-        contacts = harvest_output.get("contacts") or {}
-        phones = list(contacts.get("phones") or [])
-        emails = list(contacts.get("emails") or [])
-        for p in getattr(party, "phones", []) or []:
-            if p and p not in phones:
-                phones.append(p)
-        for e in getattr(party, "emails", []) or []:
-            if e and e not in emails:
-                emails.append(e)
-        harvest_output["contacts"] = {"phones": phones, "emails": emails}
-        if not party.address:
-            return
-        try:
-            geo = party.to_geocoding_result()
-            venue_data = {
-                "address_raw": geo.address_raw,
-                "address_comment": "адрес из реестра Dadata",
-            }
-            if geo.fias_id:
-                venue_data["fias_id"] = geo.fias_id
-            if geo.geo_lat is not None and geo.geo_lon is not None:
-                venue_data["geo_lat"] = geo.geo_lat
-                venue_data["geo_lon"] = geo.geo_lon
-            venues = list(harvest_output.get("venues") or [])
-            venues.append(venue_data)
-            harvest_output["venues"] = venues
-            logger.info(
-                "enrichment_dadata_merged",
-                org=harvest_output.get("title", "")[:40],
-                inn=harvest_output.get("inn"),
-                venue_added=geo.address_raw[:60],
-            )
-        except Exception as e:
-            logger.warning("enrichment_dadata_merge_venue_error", error=str(e))
+        """Delegate to shared dadata_merge module."""
+        from enrichment.dadata_merge import merge_dadata_into_payload
+
+        merge_dadata_into_payload(harvest_output, party)
 
     def _extract_candidate_urls(self, fix_result: FixResult) -> list[str]:
         urls = []
