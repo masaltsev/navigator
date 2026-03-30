@@ -27,6 +27,7 @@ Date-stamped отчёты перенесены в [archive/reports/](../archive/
 | Дата | Файл | Кратко |
 |------|------|--------|
 | 2026-03-29 | [2026-03-29__filament-admin-panel-v1.md](2026-03-29__filament-admin-panel-v1.md) | Первая версия админки на Filament v3: доступ, ресурсы, виджеты, ограничения v1 |
+| 2026-03-30 | — | Фиксы: тестовая БД, article pivot tables (M:N), tree-ordered dictionaries, MarkdownEditor, icon_url nullable, TargetAudience table fix |
 
 ## Примеры отчётов (в archive)
 

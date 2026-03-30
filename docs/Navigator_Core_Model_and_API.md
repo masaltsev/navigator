@@ -34,7 +34,7 @@
 | SpecialistProfile | Профили специалистов, работающих в организациях (Positive Aging naming). Включает врачей, социальных работников, волонтеров. Связь с организациями через pivot M:N. | id (PK, int), name (string), code (string), is\_active (boolean). |
 | OwnershipType | Форма собственности, определяющая юридический статус. Включает государственные (152), муниципальные (153), частные (163) структуры и НКО (162). | id (PK, int), name (string), code (string), is\_active (boolean). |
 | CoverageLevel | Территориальный охват деятельности (локальный, муниципальный, региональный, федеральный). Используется для гео-приоритизации поисковой выдачи. | id (PK, int), name (string), weight\_index (int). |
-| EventCategory | Типология активностей (лекции, тренировки ЗОЖ, собрания, мастер-классы). Критично для фильтрации в ленте событий. | id (PK, int), name (string), slug (string, unique), code (string, nullable, unique), icon\_url (string), timestamps, softDeletes. Примечание: slug используется для URL, code — для семантической идентификации в AI-пайплайне. |
+| EventCategory | Типология активностей (лекции, тренировки ЗОЖ, собрания, мастер-классы). Критично для фильтрации в ленте событий. | id (PK, int), name (string), slug (string, unique), code (string, nullable, unique), icon\_url (string, **nullable**), timestamps, softDeletes. Примечание: slug используется для URL, code — для семантической идентификации в AI-пайплайне. |
 
 ### **Полиморфная архитектура: Организаторы и Инициативы**
 
@@ -90,7 +90,10 @@
 * organization\_services: (organization\_id, service\_id). Отражает массив hp\_listing\_service.  
 * **event\_event\_categories**: (event\_id, event\_category\_id). Pivot таблица для связи событий с категориями. Название изменено на event\_event\_categories для избежания конфликта с справочником event\_categories.  
 * event\_venues: (event\_id, venue\_id). Событие может транслироваться из нескольких точек (смешанный формат).  
-* organization\_venues: (organization\_id, venue\_id, is\_headquarters boolean). Фиксирует филиальную сеть.
+* organization\_venues: (organization\_id, venue\_id, is\_headquarters boolean). Фиксирует филиальную сеть.  
+* **article\_thematic\_category**: (article\_id UUID, thematic\_category\_id int). Связь M:N статей с жизненными ситуациями (заменяет устаревший FK `related_thematic_category_id`).  
+* **article\_service**: (article\_id UUID, service\_id int). Связь M:N статей с услугами (заменяет устаревший FK `related_service_id`).  
+* **article\_specialist\_profile**: (article\_id UUID, specialist\_profile\_id int). Связь M:N статей с профилями специалистов.
 
 ### **Контентная модель (Статьи и Руководства)**
 
@@ -102,24 +105,22 @@
 | title | string | Заголовок статьи |
 | slug | string, unique | URL-дружественный идентификатор для формирования ссылок (например, `/articles/kak-pomoch-pozhilomu-rodstvenniku`) |
 | content\_url | text, nullable | Ссылка на внешний контент (WordPress, внешний CMS). Используется для гибридной стратегии: постепенная миграция с внешних систем или сохранение ссылок на внешние статьи |
-| content | longText, nullable | Локально хранимый HTML-контент из WYSIWYG-редакторов. Позволяет хранить статьи непосредственно в базе данных без зависимости от внешних систем |
+| content | longText, nullable | Контент статьи в формате **Markdown**. Legacy HTML (WordPress) автоматически конвертируется в Markdown при загрузке в админ-редактор (`HtmlToMarkdownConverter`). Batch-конвертация: `php artisan articles:normalize-html-to-markdown` |
 | excerpt | text, nullable | Краткое описание статьи для SEO и превью в списках |
 | featured\_image\_url | string, nullable | URL главного изображения статьи для отображения в карточках и социальных сетях |
-| related\_thematic\_category\_id | FK (thematic\_categories), nullable | Связь с жизненной ситуацией (thematic category), к которой относится статья |
-| related\_service\_id | FK (services), nullable | Связь с конкретной услугой, которую описывает статья |
+| related\_thematic\_category\_id | FK (thematic\_categories), nullable | **@deprecated** — заменено на M:N pivot `article_thematic_category`. Колонка сохранена для обратной совместимости |
+| related\_service\_id | FK (services), nullable | **@deprecated** — заменено на M:N pivot `article_service`. Колонка сохранена для обратной совместимости |
 | organization\_id | UUID, FK (organizations), nullable | Связь с организацией-автором или организацией, о которой написана статья |
 | status | enum (draft, published, archived), default: draft, index | Статус публикации: черновик, опубликовано, архивировано |
 | published\_at | timestamp, nullable, index | Дата и время публикации статьи. Используется для сортировки и фильтрации опубликованного контента |
 | timestamps | created\_at, updated\_at | Стандартные поля Laravel для отслеживания времени создания и обновления |
 | softDeletes | deleted\_at | Мягкое удаление для возможности восстановления статей |
 
-**Стратегия хранения контента:** Модель поддерживает гибридный подход к хранению контента. Поле `content_url` используется для ссылок на внешние системы (WordPress, внешние CMS), а поле `content` — для локально хранимого HTML. Это позволяет постепенно мигрировать контент с внешних систем или сохранять ссылки на внешние статьи при наличии локально хранимых статей.
+**Стратегия хранения контента:** Контент хранится в формате **Markdown**. Поле `content_url` используется для ссылок на внешние системы (WordPress, внешние CMS), а поле `content` — для локально хранимого Markdown. Legacy HTML из WordPress автоматически конвертируется в Markdown при загрузке в редактор через `HtmlToMarkdownConverter`. Для массовой конвертации: `php artisan articles:normalize-html-to-markdown`.
 
-**Совместимость с WYSIWYG/CMS:** Схема совместима с популярными Laravel-пакетами для работы с контентом:
-- Filament (filamentphp/filament) — компонент RichEditor
-- Nova (laravel/nova) — поле RichText
-- Spatie Media Library — для управления медиафайлами (или использование `featured_image_url` для простых случаев)
-- Для блочных редакторов (например, Tiptap с блоками) можно добавить JSONB-колонку `blocks` для структурированного контента
+**Связи с справочниками (M:N):** Статьи связаны с тематическими категориями, услугами и профилями специалистов через pivot-таблицы: `article_thematic_category`, `article_service`, `article_specialist_profile`. Старые FK-колонки (`related_thematic_category_id`, `related_service_id`) сохранены, но помечены как `@deprecated`.
+
+**Админ-панель (Filament v3):** Статьи редактируются через MarkdownEditor с полным тулбаром (заголовки, списки, цитаты, таблицы, код). Slugs генерируются с поддержкой Unicode/кириллицы. Выбор справочников — через CheckboxList с древовидным отображением (для иерархических справочников — parent → children)
 
 ### **Индексы производительности**
 
@@ -164,7 +165,11 @@
 
 **Авторизация, Ролевая модель и Управление доступом (Tenancy)**
 
-Для обеспечения будущих функций личного кабинета и распределенной модерации вводится высокоуровневая ролевая модель (RBAC/Tenancy). Архитектура включает сущности users и roles (базовые роли: модератор, региональный куратор, представитель организации/организатор). Вводится связующая таблица user\_organizer (или прямая связь user\_id ↔ organizer\_id), которая предоставляет авторизованным представителям права (permissions) на редактирование своих карточек организаций, управление расписанием мероприятий и актуализацию контактных данных. Детальная гранулярность прав на данном этапе не требуется, но фундамент для мультитенантности закладывается сразу.1
+Для обеспечения будущих функций личного кабинета и распределенной модерации вводится высокоуровневая ролевая модель (RBAC/Tenancy). Архитектура включает сущности users и roles (базовые роли: модератор, региональный куратор, представитель организации/организатор). Вводится связующая таблица user\_organizer (или прямая связь user\_id ↔ organizer\_id), которая предоставляет авторизованным представителям права (permissions) на редактирование своих карточек организаций, управление расписанием мероприятий и актуализацию контактных данных. Детальная гранулярность прав на данном этапе не требуется, но фундамент для мультитенантности закладывается сразу.
+
+**Админ-панель (Filament v3):** Реализована панель управления по адресу `/admin` на базе Filament v3. Доступ контролируется флагом `users.is_admin` (boolean, миграция `add_is_admin_to_users_table`). Первый администратор создаётся командой `php artisan admin:create {email} {password}`. Подробнее: `backend/docs/admin_panel.md`.
+
+**Примечание о таблице target\_audience:** Таблица в БД использует **единственное число** (`target_audience`), а не стандартное Laravel-множественное `target_audiences`. В модели `TargetAudience` указано `$table = 'target_audience'`.
 
 ## ---
 
