@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrganizationType extends Model
@@ -15,11 +15,11 @@ class OrganizationType extends Model
     protected $guarded = [];
 
     /**
-     * @return HasMany<Organization, $this>
+     * @return BelongsToMany<Organization, $this>
      */
-    public function organizations(): HasMany
+    public function organizations(): BelongsToMany
     {
-        return $this->hasMany(Organization::class);
+        return $this->belongsToMany(Organization::class, 'organization_organization_types');
     }
 
     /**

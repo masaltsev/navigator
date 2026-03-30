@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Venue extends Model
 {
@@ -61,5 +62,22 @@ class Venue extends Model
         );
 
         return $point ? ['lat' => (float) $point->lat, 'lng' => (float) $point->lng] : null;
+    }
+
+    /**
+     * Persist WGS84 point to PostGIS geometry column (lng, lat order for ST_MakePoint).
+     */
+    public function updateCoordinatesFromLatLng(?float $latitude, ?float $longitude): void
+    {
+        if ($latitude === null || $longitude === null) {
+            return;
+        }
+
+        DB::statement(
+            'UPDATE venues SET coordinates = ST_SetSRID(ST_MakePoint(?, ?), 4326)::geometry WHERE id = ?',
+            [$longitude, $latitude, $this->getKey()]
+        );
+
+        $this->refresh();
     }
 }

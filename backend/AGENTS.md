@@ -10,8 +10,10 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
 - php - 8.4.17
+- filament/filament (FILAMENT) - v3
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
+- livewire/livewire (LIVEWIRE) - v3
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pail (PAIL) - v1
@@ -40,6 +42,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
+- **Filament admin** (`app/Filament/`, `app/Providers/Filament/`): panel path `/admin`; access via `User::is_admin` and `FilamentUser::canAccessPanel()`. Human-oriented how-to: `docs/admin_panel.md`. First admin user: `php artisan admin:create {email} {password}`.
 
 ## Frontend Bundling
 

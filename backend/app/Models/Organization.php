@@ -105,6 +105,14 @@ class Organization extends Model
     }
 
     /**
+     * @return HasMany<SuggestedTaxonomyItem, $this>
+     */
+    public function suggestedTaxonomyItems(): HasMany
+    {
+        return $this->hasMany(SuggestedTaxonomyItem::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

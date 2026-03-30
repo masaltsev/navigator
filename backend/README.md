@@ -1,3 +1,45 @@
+# Navigator — backend (Laravel)
+
+API и административная панель проекта **Navigator**: Laravel 12, PHP 8.2+, PostgreSQL (в продакшене — с PostGIS для геоданных площадок).
+
+## Быстрый старт
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+```
+
+Локально удобно использовать [Laravel Herd](https://herd.laravel.com/) или `php artisan serve`.
+
+## Документация
+
+| Тема | Файл |
+|------|------|
+| **Админ-панель (Filament)** | [docs/admin_panel.md](docs/admin_panel.md) |
+| Отчёт о внедрении админки v1 | [docs/reports/2026-03-29__filament-admin-panel-v1.md](docs/reports/2026-03-29__filament-admin-panel-v1.md) |
+| Релизы отчётов | [docs/reports/README.md](docs/reports/README.md) |
+| Деплой БД / схема | [docs/DEPLOY_DATABASE.md](docs/DEPLOY_DATABASE.md) |
+| Внутренний API (Harvester) | [docs/internal_api_authentication.md](docs/internal_api_authentication.md) |
+| OpenAPI | [docs/openapi.yaml](docs/openapi.yaml) |
+
+## Админ-панель (кратко)
+
+- URL: **`/admin`**
+- Первый администратор: `php artisan admin:create email@example.com 'password'`
+- Доступ: пользователь с `is_admin = true` в таблице `users`
+
+Подробности — в [docs/admin_panel.md](docs/admin_panel.md).
+
+## Тесты
+
+```bash
+php artisan test --compact
+```
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
