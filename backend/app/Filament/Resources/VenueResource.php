@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Schema;
 
 class VenueResource extends Resource
 {
@@ -100,9 +101,9 @@ class VenueResource extends Resource
                     ->label('Has coordinates')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('coordinates')),
                 Tables\Filters\SelectFilter::make('region_iso')
-                    ->options(fn (): array => Venue::query()->whereNotNull('region_iso')->distinct()->orderBy('region_iso')->pluck('region_iso', 'region_iso')->all()),
+                    ->options(fn (): array => self::venueDistinctOptions('region_iso')),
                 Tables\Filters\SelectFilter::make('region_code')
-                    ->options(fn (): array => Venue::query()->whereNotNull('region_code')->distinct()->orderBy('region_code')->pluck('region_code', 'region_code')->all()),
+                    ->options(fn (): array => self::venueDistinctOptions('region_code')),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
@@ -140,5 +141,19 @@ class VenueResource extends Resource
             'create' => Pages\CreateVenue::route('/create'),
             'edit' => Pages\EditVenue::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Avoid querying `venues` when the table is missing (e.g. partial DB restore).
+     *
+     * @return array<string, string>
+     */
+    private static function venueDistinctOptions(string $column): array
+    {
+        if (! Schema::hasTable('venues')) {
+            return [];
+        }
+
+        return Venue::query()->whereNotNull($column)->distinct()->orderBy($column)->pluck($column, $column)->all();
     }
 }

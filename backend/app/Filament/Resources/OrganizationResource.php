@@ -19,6 +19,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\HtmlString;
 
 class OrganizationResource extends Resource
@@ -339,6 +340,10 @@ class OrganizationResource extends Resource
                             ->label('Venue region code'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
+                        if (! Schema::hasTable('venues')) {
+                            return $query;
+                        }
+
                         return $query->when(
                             filled($data['region_iso'] ?? null) || filled($data['region_code'] ?? null),
                             fn (Builder $q): Builder => $q->whereHas('venues', function (Builder $vq) use ($data): void {
