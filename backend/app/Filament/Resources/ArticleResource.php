@@ -6,6 +6,7 @@ use App\Filament\Resources\ArticleResource\Pages;
 use App\Filament\Support\StatusColors;
 use App\Models\Article;
 use App\Models\Service;
+use App\Models\SpecialistProfile;
 use App\Models\ThematicCategory;
 use App\Support\Content\HtmlToMarkdownConverter;
 use App\Support\HierarchicalDictionaryOptions;
@@ -113,6 +114,7 @@ class ArticleResource extends Resource
                             ->label('Services'),
                         Forms\Components\CheckboxList::make('specialistProfiles')
                             ->relationship('specialistProfiles', 'name')
+                            ->options(fn () => SpecialistProfile::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->columns(2)
                             ->gridDirection('row')
                             ->searchable()
