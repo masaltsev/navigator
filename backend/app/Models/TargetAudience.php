@@ -11,6 +11,8 @@ class TargetAudience extends Model
     /** @use HasFactory<\Database\Factories\TargetAudienceFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $table = 'target_audience';
+
     protected $guarded = [];
 
     /**

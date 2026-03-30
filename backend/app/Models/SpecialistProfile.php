@@ -26,6 +26,14 @@ class SpecialistProfile extends Model
     }
 
     /**
+     * @return BelongsToMany<Article, $this>
+     */
+    public function articles(): BelongsToMany
+    {
+        return $this->belongsToMany(Article::class, 'article_specialist_profile');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
