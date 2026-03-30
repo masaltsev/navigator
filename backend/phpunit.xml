@@ -23,12 +23,8 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- IMPORTANT: Use separate test database to avoid affecting production data -->
-        <!-- Uncomment for SQLite testing (faster, no PostGIS) -->
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
-        <!-- Для тестов используем ту же базу, но будем осторожны -->
         <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="navigator_core_test"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
