@@ -12,8 +12,10 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 | Harvester: dispatch due sources to crawl (POST /harvest/run)
 |--------------------------------------------------------------------------
-| Runs daily at 02:00. Requires HARVESTER_URL and HARVESTER_API_TOKEN in .env.
-| On production ensure cron: * * * * * cd /path/to/backend && php artisan schedule:run
+| DISABLED: nightly harvest was unreliable on prod; run manually when ready:
+|   php artisan harvest:dispatch-due [--limit=100] [--dry-run]
+| Requires HARVESTER_URL and HARVESTER_API_TOKEN in .env.
+| Cron must still run schedule:run for other tasks, e.g. db:backup.
 */
 /*
 |--------------------------------------------------------------------------
@@ -24,4 +26,4 @@ Artisan::command('inspire', function () {
 */
 Schedule::command('db:backup')->daily()->at('01:55');
 
-Schedule::command('harvest:dispatch-due', ['--limit' => 500])->daily()->at('02:00');
+// Schedule::command('harvest:dispatch-due', ['--limit' => 500])->daily()->at('02:00');
