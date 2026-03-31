@@ -20,6 +20,7 @@ php artisan migrate
 | **Админ-панель (Filament)** | [docs/admin_panel.md](docs/admin_panel.md) |
 | Отчёт о внедрении админки v1 | [docs/reports/2026-03-29__filament-admin-panel-v1.md](docs/reports/2026-03-29__filament-admin-panel-v1.md) |
 | Релизы отчётов | [docs/reports/README.md](docs/reports/README.md) |
+| Подозрительные организации и мердж дублей | [docs/organizations_suspicious_and_merge_commands.md](docs/organizations_suspicious_and_merge_commands.md) |
 | Деплой БД / схема | [docs/DEPLOY_DATABASE.md](docs/DEPLOY_DATABASE.md) |
 | Внутренний API (Harvester) | [docs/internal_api_authentication.md](docs/internal_api_authentication.md) |
 | OpenAPI | [docs/openapi.yaml](docs/openapi.yaml) |
