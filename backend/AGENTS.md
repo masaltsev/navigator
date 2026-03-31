@@ -56,6 +56,16 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
+## Production database safety (non-negotiable)
+
+- Never run destructive database commands on production (`APP_ENV=production` and/or DB = `navigator_core`).
+- Destructive commands include (non-exhaustive): `migrate:fresh`, `db:wipe`, `schema:drop`, `DROP DATABASE`, `DROP SCHEMA`, `TRUNCATE`, and ad-hoc `psql` drops.
+- Never run `php artisan test` (feature tests) against production DB.
+- Before any DB-affecting command, always verify:
+  - `php artisan env`
+  - active database name via config (e.g. `config('database.connections.pgsql.database')`)
+  - If not explicitly a `*_test` DB, stop and switch to a dedicated test DB workflow.
+
 === boost rules ===
 
 # Laravel Boost
