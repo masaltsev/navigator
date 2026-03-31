@@ -84,6 +84,7 @@ class ImportController extends Controller
             'venues.*.is_headquarters' => 'nullable|boolean',
             'verified_fields' => 'nullable|array',
             'content_hash' => 'nullable|string|max:32',
+            'source_id' => 'nullable|uuid|exists:sources,id',
         ]);
 
         if ($validator->fails()) {
@@ -97,11 +98,27 @@ class ImportController extends Controller
         return DB::transaction(function () use ($data, $aiMetadata, $classification) {
             $isUpdate = false;
             $currentStatus = null;
+            $existing = null;
 
             if ($data['entity_type'] === 'Organization') {
-                $existing = $this->findExistingOrganization($data['source_reference'], $data['inn'] ?? null);
-                $isUpdate = $existing !== null;
-                $currentStatus = $existing?->status;
+                if (! empty($data['source_id'])) {
+                    $existing = $this->findOrganizationForSourceId($data['source_id']);
+                    if (! $existing) {
+                        throw ValidationException::withMessages([
+                            'source_id' => ['Source is missing, deleted, or not linked to an organization organizer. Crawl must not create a new organization in this case.'],
+                        ]);
+                    }
+                    $isUpdate = true;
+                    $currentStatus = $existing->status;
+                } else {
+                    $existing = $this->findExistingOrganization(
+                        $data['source_reference'],
+                        $data['inn'] ?? null,
+                        $data['ogrn'] ?? null
+                    );
+                    $isUpdate = $existing !== null;
+                    $currentStatus = $existing?->status;
+                }
             }
 
             $rawStatus = $this->determineStatus($aiMetadata);
@@ -328,6 +345,7 @@ class ImportController extends Controller
             'site_urls' => $data['site_urls'] ?? null,
             'target_audience' => $data['target_audience'] ?? null,
             'vk_group_id' => $this->extractVkGroupId($data['vk_group_url'] ?? null),
+            'ok_group_id' => $this->extractOkGroupId($data['ok_group_url'] ?? null),
             'source_reference' => $data['source_reference'],
             'status' => $status,
         ];
@@ -363,8 +381,13 @@ class ImportController extends Controller
     /**
      * Fallback chain lookup: source_reference → inn → null (create new).
      */
-    private function findExistingOrganization(string $sourceReference, ?string $inn): ?Organization
+    private function findExistingOrganization(string $sourceReference, ?string $inn, ?string $ogrn): ?Organization
     {
+        $bySourceUrl = $this->findOrganizationBySourceUrl($sourceReference);
+        if ($bySourceUrl) {
+            return $bySourceUrl;
+        }
+
         $bySource = Organization::where('source_reference', $sourceReference)->first();
         if ($bySource) {
             return $bySource;
@@ -377,7 +400,97 @@ class ImportController extends Controller
             }
         }
 
+        if ($ogrn) {
+            $byOgrn = Organization::where('ogrn', $ogrn)->first();
+            if ($byOgrn) {
+                return $byOgrn;
+            }
+        }
+
         return null;
+    }
+
+    private function findOrganizationBySourceUrl(string $sourceReference): ?Organization
+    {
+        $sourceReference = trim($sourceReference);
+        if ($sourceReference === '') {
+            return null;
+        }
+
+        foreach ($this->sourceUrlVariants($sourceReference) as $variant) {
+            $organizerId = DB::table('sources')
+                ->whereNull('deleted_at')
+                ->where('base_url', $variant)
+                ->whereNotNull('organizer_id')
+                ->value('organizer_id');
+
+            if (! $organizerId) {
+                continue;
+            }
+
+            $organizationId = DB::table('organizers')
+                ->whereNull('deleted_at')
+                ->where('id', $organizerId)
+                ->where('organizable_type', 'Organization')
+                ->value('organizable_id');
+
+            if (! $organizationId) {
+                continue;
+            }
+
+            $org = Organization::query()->whereNull('deleted_at')->whereKey($organizationId)->first();
+            if ($org) {
+                return $org;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function sourceUrlVariants(string $url): array
+    {
+        $url = trim($url);
+        $variants = array_unique(array_filter([$url, rtrim($url, '/')]));
+
+        $expanded = [];
+        foreach ($variants as $v) {
+            $expanded[] = $v;
+            if (preg_match('#^https?://m\\.ok\\.ru/(group/\\d+[^?#]*)$#i', $v, $m)) {
+                $expanded[] = 'https://ok.ru/'.$m[1];
+            }
+            if (preg_match('#^https?://ok\\.ru/(group/\\d+[^?#]*)$#i', $v, $m)) {
+                $expanded[] = 'https://m.ok.ru/'.$m[1];
+            }
+        }
+
+        return array_values(array_unique($expanded));
+    }
+
+    private function findOrganizationForSourceId(string $sourceId): ?Organization
+    {
+        $row = DB::table('sources')
+            ->whereNull('deleted_at')
+            ->where('id', $sourceId)
+            ->first();
+
+        if (! $row || ! $row->organizer_id) {
+            return null;
+        }
+
+        $organizationId = DB::table('organizers')
+            ->whereNull('deleted_at')
+            ->where('id', $row->organizer_id)
+            ->where('organizable_type', 'Organization')
+            ->value('organizable_id');
+
+        if (! $organizationId) {
+            return null;
+        }
+
+        return Organization::query()->whereNull('deleted_at')->whereKey($organizationId)->first();
     }
 
     private function createOrUpdateInitiativeGroup(
@@ -563,6 +676,23 @@ class ImportController extends Controller
         }
 
         if (preg_match('/(?:club|public)(\d+)/i', $url, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract numeric OK group ID from URL.
+     * Handles: https://ok.ru/group/62131670810722
+     */
+    private function extractOkGroupId(?string $url): ?int
+    {
+        if (empty($url)) {
+            return null;
+        }
+
+        if (preg_match('~ok\\.ru/group/(\\d+)~i', $url, $matches)) {
             return (int) $matches[1];
         }
 

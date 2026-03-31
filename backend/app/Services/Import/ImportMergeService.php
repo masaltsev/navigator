@@ -44,6 +44,17 @@ class ImportMergeService
             $merged[$field] = $existing->{$field};
         }
 
+        // Strong legal identity: both INN and OGRN already set (e.g. DaData) — never let a crawler/LLM
+        // overwrite title or legal ids unless the payload explicitly carries trusted verification.
+        if ($this->hasStrongLegalIdentity($existing)) {
+            foreach (self::PROTECTED_FIELDS as $field) {
+                if ($this->isVerifiedField($field, $incomingVerified)) {
+                    continue;
+                }
+                $merged[$field] = $existing->{$field};
+            }
+        }
+
         $merged = $this->applyNullSafety($existing, $merged);
         $merged['verified_fields'] = $this->mergeVerifiedFields($existingVerified, $incomingVerified);
 
@@ -161,5 +172,13 @@ class ImportMergeService
         }
 
         return false;
+    }
+
+    private function hasStrongLegalIdentity(Organization $existing): bool
+    {
+        $inn = trim((string) ($existing->inn ?? ''));
+        $ogrn = trim((string) ($existing->ogrn ?? ''));
+
+        return $inn !== '' && $ogrn !== '';
     }
 }
