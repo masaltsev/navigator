@@ -39,7 +39,8 @@ class OrganizationResource extends Resource
      */
     public static function getGloballySearchableAttributes(): array
     {
-        return ['title', 'short_title', 'inn', 'ogrn', 'description'];
+        // Exclude description: large HTML bodies would blow memory if global search loads many rows.
+        return ['title', 'short_title', 'inn', 'ogrn'];
     }
 
     /**
@@ -250,6 +251,23 @@ class OrganizationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Avoid loading huge text/json columns on the list (especially when users pick "All" rows).
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->select([
+                'organizations.id',
+                'organizations.title',
+                'organizations.short_title',
+                'organizations.inn',
+                'organizations.ogrn',
+                'organizations.status',
+                'organizations.ownership_type_id',
+                'organizations.works_with_elderly',
+                'organizations.ai_confidence_score',
+                'organizations.created_at',
+                'organizations.updated_at',
+                'organizations.deleted_at',
+            ]))
+            // Default Filament options include "all", which OOMs on large tables.
+            ->paginationPageOptions([10, 25, 50, 100])
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
