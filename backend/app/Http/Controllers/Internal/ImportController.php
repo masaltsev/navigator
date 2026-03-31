@@ -458,10 +458,10 @@ class ImportController extends Controller
         $expanded = [];
         foreach ($variants as $v) {
             $expanded[] = $v;
-            if (preg_match('#^https?://m\\.ok\\.ru/(group/\\d+[^?#]*)$#i', $v, $m)) {
+            if (preg_match('~^https?://m\\.ok\\.ru/(group/\\d+[^?#]*)$~i', $v, $m)) {
                 $expanded[] = 'https://ok.ru/'.$m[1];
             }
-            if (preg_match('#^https?://ok\\.ru/(group/\\d+[^?#]*)$#i', $v, $m)) {
+            if (preg_match('~^https?://ok\\.ru/(group/\\d+[^?#]*)$~i', $v, $m)) {
                 $expanded[] = 'https://m.ok.ru/'.$m[1];
             }
         }
