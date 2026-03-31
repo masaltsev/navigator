@@ -11,7 +11,7 @@ use App\Models\Organizer;
 use App\Models\Service;
 use App\Models\ThematicCategory;
 use App\Models\Venue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 use Tests\TestCase;
 
 /**
@@ -20,7 +20,7 @@ use Tests\TestCase;
  */
 class SafeImplementationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabaseWithSchema;
 
     /**
      * Тест BK-01: PostGIS координаты

@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('db:cleanup-test-records refuses to run without --dry-run or --force', function (): void {
     if (config('database.default') !== 'pgsql') {

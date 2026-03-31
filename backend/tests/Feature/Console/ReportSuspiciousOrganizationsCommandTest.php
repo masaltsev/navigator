@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('db:report-suspicious-organizations runs successfully', function (): void {
     if (config('database.connections.pgsql.database') === 'navigator_core') {

@@ -2,9 +2,9 @@
 
 use App\Models\Organization;
 use App\Models\Organizer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('GET /api/v1/organizations includes primary_phone in response', function () {
     // Create organizer with contact phones

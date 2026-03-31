@@ -3,9 +3,9 @@
 use App\Models\Organization;
 use App\Models\Organizer;
 use App\Models\Source;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('internal import updates existing organization resolved via sources.base_url', function (): void {
     if (config('database.connections.pgsql.database') === 'navigator_core') {
@@ -13,6 +13,12 @@ test('internal import updates existing organization resolved via sources.base_ur
     }
 
     config()->set('internal.api_token', 'test-token');
+
+    $orgType = \App\Models\OrganizationType::first();
+    $ownership = \App\Models\OwnershipType::first();
+    if (! $orgType || ! $ownership) {
+        $this->markTestSkipped('Required dictionaries not found');
+    }
 
     $existingOrg = Organization::factory()->create([
         'title' => 'ГАУ СО КЦСОН Федоровского района',
@@ -59,7 +65,10 @@ test('internal import updates existing organization resolved via sources.base_ur
             'ai_explanation' => null,
             'ai_source_trace' => [],
         ],
-        'classification' => [],
+        'classification' => [
+            'organization_type_codes' => [$orgType->code],
+            'ownership_type_code' => $ownership->code,
+        ],
     ];
 
     $resp = $this

@@ -2,6 +2,34 @@
 
 /*
 |--------------------------------------------------------------------------
+| Test Environment Bootstrapping
+|--------------------------------------------------------------------------
+|
+| This repo currently contains cached bootstrap files (bootstrap/cache/*.php).
+| If they exist, Laravel will load them and ignore phpunit.xml environment
+| overrides, which breaks tests (e.g. using file cache with unwritable paths).
+|
+| NOTE: This file must never attempt to create databases / extensions.
+| Tests must run against an explicitly provisioned *_test database.
+|
+*/
+
+$bootstrapCacheDir = dirname(__DIR__).'/bootstrap/cache';
+$cachedFiles = [
+    $bootstrapCacheDir.'/config.php',
+    $bootstrapCacheDir.'/packages.php',
+    $bootstrapCacheDir.'/routes-v7.php',
+    $bootstrapCacheDir.'/services.php',
+];
+
+foreach ($cachedFiles as $file) {
+    if (is_file($file)) {
+        @unlink($file);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Test Case
 |--------------------------------------------------------------------------
 |
@@ -12,7 +40,7 @@
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(Tests\Concerns\RefreshDatabaseWithSchema::class)
     ->in('Feature');
 
 /*

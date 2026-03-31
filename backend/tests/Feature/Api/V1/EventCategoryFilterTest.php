@@ -3,9 +3,9 @@
 use App\Models\Event;
 use App\Models\EventCategory;
 use App\Models\EventInstance;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('GET /api/v1/events filters by event_category_id', function () {
     $category1 = EventCategory::factory()->create(['slug' => 'lecture-id']);

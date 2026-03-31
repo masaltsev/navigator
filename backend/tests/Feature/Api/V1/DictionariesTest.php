@@ -6,10 +6,10 @@ use App\Models\OwnershipType;
 use App\Models\Service;
 use App\Models\SpecialistProfile;
 use App\Models\ThematicCategory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 use Illuminate\Support\Facades\Cache;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 beforeEach(function () {
     Cache::forget('v1_dictionaries');

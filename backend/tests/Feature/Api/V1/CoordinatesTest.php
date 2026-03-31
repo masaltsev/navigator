@@ -4,12 +4,12 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\Organization;
 use App\Models\Venue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 use Tests\TestCase;
 
 class CoordinatesTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabaseWithSchema;
 
     public function test_get_api_v1_organizations_returns_coordinates_when_venue_has_coordinates(): void
     {

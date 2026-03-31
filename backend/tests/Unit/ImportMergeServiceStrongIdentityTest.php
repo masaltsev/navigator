@@ -2,10 +2,10 @@
 
 use App\Models\Organization;
 use App\Services\Import\ImportMergeService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabaseWithSchema::class);
 
 test('mergeAttributes keeps title and legal ids when organization has both inn and ogrn unless incoming is verified', function (): void {
     if (config('database.connections.pgsql.database') === 'navigator_core') {

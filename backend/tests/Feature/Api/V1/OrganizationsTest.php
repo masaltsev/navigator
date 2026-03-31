@@ -58,6 +58,12 @@ test('GET /api/v1/organizations filters by thematic_category_id', function () {
         $this->markTestSkipped('No thematic categories found');
     }
 
+    $org = Organization::factory()->create([
+        'status' => 'approved',
+        'works_with_elderly' => true,
+    ]);
+    $org->thematicCategories()->attach($category->id);
+
     $response = $this->getJson("/api/v1/organizations?thematic_category_id[]={$category->id}");
 
     $response->assertSuccessful();

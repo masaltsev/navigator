@@ -4,9 +4,9 @@ use App\Models\Article;
 use App\Models\Organization;
 use App\Models\Service;
 use App\Models\ThematicCategory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\RefreshDatabaseWithSchema;
 
-uses(RefreshDatabase::class);
+uses(RefreshDatabaseWithSchema::class);
 
 test('GET /api/v1/articles returns published articles', function () {
     Article::factory()->create([
