@@ -182,6 +182,30 @@ paths:
                       per_page: { type: integer }
                       total: { type: integer }
 
+  /v1/events/{id}:
+    get:
+      tags: [Public v1 — Events]
+      summary: Детальная карточка мероприятия (экземпляра)
+      description: Возвращает один публичный event_instance в формате EventInstanceItem.
+      operationId: showEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID экземпляра события (event_instances.id)
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Карточка мероприятия
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/EventInstanceItem' }
+        '404':
+          description: Событие не найдено или недоступно в public
+
   /v1/dictionaries:
     get:
       tags: [Public v1 — Dictionaries]
