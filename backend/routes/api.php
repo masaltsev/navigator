@@ -18,6 +18,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/organizations/{id}', [OrganizationController::class, 'show']);
 
     Route::get('/events', [EventController::class, 'index']);
+    Route::get('/events/{id}', [EventController::class, 'show']);
 
     Route::get('/dictionaries', [DictionaryController::class, 'index']);
 

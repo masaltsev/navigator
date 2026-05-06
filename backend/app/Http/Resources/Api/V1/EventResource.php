@@ -58,7 +58,8 @@ class EventResource extends JsonResource
                 ])
             ),
             'organizer' => $this->when(
-                $event->relationLoaded('organizer.organizable'),
+                $event->relationLoaded('organizer')
+                    && $event->organizer?->relationLoaded('organizable'),
                 function () use ($event) {
                     $organizable = $event->organizer?->organizable;
                     if (! $organizable) {

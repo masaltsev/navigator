@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\EventResource;
 use App\Models\EventInstance;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -26,31 +27,7 @@ class EventController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = EventInstance::query()
-            ->where('status', 'scheduled')
-            ->with([
-                'event' => function ($q) {
-                    $q->where('status', 'approved')
-                        ->with([
-                            'organizer.organizable',
-                            'categories',
-                            'venues' => function ($q2) {
-                                $q2->select(
-                                    'venues.id',
-                                    'venues.address_raw',
-                                    'venues.coordinates',
-                                    'venues.fias_id',
-                                    'venues.city_fias_id',
-                                    'venues.region_iso',
-                                    'venues.region_code'
-                                );
-                            },
-                        ]);
-                },
-            ])
-            ->whereHas('event', function ($q) {
-                $q->where('status', 'approved');
-            });
+        $query = $this->publicEventInstancesQuery();
 
         // Time frame filter
         if ($request->filled('time_frame')) {
@@ -161,5 +138,51 @@ class EventController extends Controller
         $events = $query->orderBy('start_datetime')->paginate($request->input('per_page', 15));
 
         return EventResource::collection($events);
+    }
+
+    /**
+     * Display a single public event instance.
+     */
+    public function show(string $id): EventResource
+    {
+        $eventInstance = $this->publicEventInstancesQuery()
+            ->whereKey($id)
+            ->firstOrFail();
+
+        return new EventResource($eventInstance);
+    }
+
+    /**
+     * Build base query for publicly visible event instances.
+     *
+     * @return Builder<EventInstance>
+     */
+    private function publicEventInstancesQuery(): Builder
+    {
+        return EventInstance::query()
+            ->where('status', 'scheduled')
+            ->with([
+                'event' => function ($q) {
+                    $q->where('status', 'approved')
+                        ->with([
+                            'organizer.organizable',
+                            'categories',
+                            'venues' => function ($q2) {
+                                $q2->select(
+                                    'venues.id',
+                                    'venues.address_raw',
+                                    'venues.coordinates',
+                                    'venues.fias_id',
+                                    'venues.city_fias_id',
+                                    'venues.region_iso',
+                                    'venues.region_code'
+                                );
+                            },
+                        ]);
+                },
+            ])
+            ->whereHas('event', function ($q) {
+                $q->where('status', 'approved');
+            });
     }
 }
